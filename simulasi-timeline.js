@@ -1,24 +1,10 @@
-const METHOD_DEFAULTS = {
-  "Tender": {
-    duration: 30,
-    prep: 14
-  },
-  "Seleksi": {
-    duration: 30,
-    prep: 14
-  },
-  "Pengadaan Langsung / ePL": {
-    duration: 7,
-    prep: 7
-  },
-  "Penunjukan Langsung": {
-    duration: 7,
-    prep: 7
-  },
-  "e-Purchasing": {
-    duration: 3,
-    prep: 3
-  }
+const METHOD_RULES = {
+  "Tender Cepat": { default: 3, min: 3, max: 14, prep: 7 },
+  "Tender": { default: 61, min: 30, max: 180, prep: 14 },
+  "Seleksi": { default: 40, min: 30, max: 120, prep: 14 },
+  "Pengadaan Langsung / ePL": { default: 7, min: 1, max: 30, prep: 7 },
+  "Penunjukan Langsung": { default: 7, min: 3, max: 30, prep: 7 },
+  "e-Purchasing": { default: 3, min: 1, max: 14, prep: 3 }
 };
 
 const TIMELINE_MONTHS = [
@@ -47,11 +33,17 @@ const el = {
   tahunAnggaran: document.getElementById("tahunAnggaran"),
   jenisKontrak: document.getElementById("jenisKontrak"),
   jenisPengadaan: document.getElementById("jenisPengadaan"),
+  paguPaket: document.getElementById("paguPaket"),
+  tersediaKatalog: document.getElementById("tersediaKatalog"),
   metodePemilihan: document.getElementById("metodePemilihan"),
   durasiPemilihan: document.getElementById("durasiPemilihan"),
   waktuPersiapanAwal: document.getElementById("waktuPersiapanAwal"),
   durasiPekerjaan: document.getElementById("durasiPekerjaan"),
   mulaiPelaksanaan: document.getElementById("mulaiPelaksanaan"),
+
+  helpMetode: document.getElementById("helpMetode"),
+  helpDurasiPemilihan: document.getElementById("helpDurasiPemilihan"),
+  infoRule: document.getElementById("infoRule"),
 
   btnSimulasikan: document.getElementById("btnSimulasikan"),
   btnReset: document.getElementById("btnReset"),
@@ -60,12 +52,15 @@ const el = {
 
   badgeMetode: document.getElementById("badgeMetode"),
 
+  outPaguPaket: document.getElementById("outPaguPaket"),
   outMulaiPersiapan: document.getElementById("outMulaiPersiapan"),
   outMulaiPemilihan: document.getElementById("outMulaiPemilihan"),
   outSelesaiPemilihan: document.getElementById("outSelesaiPemilihan"),
   outMulaiKontrak: document.getElementById("outMulaiKontrak"),
   outSelesaiPelaksanaan: document.getElementById("outSelesaiPelaksanaan"),
   outDurasiTotal: document.getElementById("outDurasiTotal"),
+  outStatusMetode: document.getElementById("outStatusMetode"),
+  outSaranMetode: document.getElementById("outSaranMetode"),
   outStatusJadwal: document.getElementById("outStatusJadwal"),
   outSaranSistem: document.getElementById("outSaranSistem"),
 
@@ -80,6 +75,8 @@ const el = {
 
   detailTahun: document.getElementById("detailTahun"),
   detailJenisPengadaan: document.getElementById("detailJenisPengadaan"),
+  detailPaguPaket: document.getElementById("detailPaguPaket"),
+  detailKatalog: document.getElementById("detailKatalog"),
   detailMetode: document.getElementById("detailMetode"),
   detailJenisKontrak: document.getElementById("detailJenisKontrak"),
   detailDurasiPemilihan: document.getElementById("detailDurasiPemilihan"),
@@ -92,29 +89,18 @@ const el = {
 
 function parseLocalDate(dateString) {
   if (!dateString) return null;
-
   const parts = dateString.split("-");
   if (parts.length !== 3) return null;
-
-  return new Date(
-    Number(parts[0]),
-    Number(parts[1]) - 1,
-    Number(parts[2])
-  );
+  return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
 }
 
 function formatDateID(date) {
   if (!(date instanceof Date) || isNaN(date)) return "-";
-
-  const day = date.getDate();
   const monthNames = [
     "Januari", "Februari", "Maret", "April", "Mei", "Juni",
     "Juli", "Agustus", "September", "Oktober", "November", "Desember"
   ];
-  const month = monthNames[date.getMonth()];
-  const year = date.getFullYear();
-
-  return `${day} ${month} ${year}`;
+  return `${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
 }
 
 function addDays(date, days) {
@@ -126,19 +112,31 @@ function addDays(date, days) {
 function addMonths(date, months) {
   const d = new Date(date);
   const originalDate = d.getDate();
-
   d.setMonth(d.getMonth() + months);
-
   if (d.getDate() < originalDate) {
     d.setDate(0);
   }
-
   return d;
 }
 
 function diffDays(start, end) {
   const ms = end.getTime() - start.getTime();
   return Math.round(ms / (1000 * 60 * 60 * 24));
+}
+
+function formatRupiah(number) {
+  return `Rp${Number(number || 0).toLocaleString("id-ID")}`;
+}
+
+function parseNumberInput(value) {
+  if (!value) return 0;
+  const cleaned = String(value).replace(/[^\d]/g, "");
+  return Number(cleaned || 0);
+}
+
+function formatPaguInput() {
+  const value = parseNumberInput(el.paguPaket.value);
+  el.paguPaket.value = value ? value.toLocaleString("id-ID") : "";
 }
 
 function getTimelineMonthRange(tahunAnggaran, timelineItem) {
@@ -152,7 +150,7 @@ function isOverlap(rangeStart, rangeEnd, monthStart, monthEnd) {
   return rangeStart <= monthEnd && rangeEnd >= monthStart;
 }
 
-function buildHeader(tahunAnggaran) {
+function buildHeader() {
   el.timelineSuperHeader.innerHTML = "";
   el.timelineHeader.innerHTML = "";
 
@@ -162,12 +160,12 @@ function buildHeader(tahunAnggaran) {
 
   const prevHeader = document.createElement("div");
   prevHeader.className = "timeline-super-cell timeline-super-prev";
-  prevHeader.textContent = "TAHUN ANGGARAN SEBELUMNYA";
+  prevHeader.textContent = "TAHUN ANGGARAN SEBELUMNYA (N-1)";
   el.timelineSuperHeader.appendChild(prevHeader);
 
   const currentHeader = document.createElement("div");
   currentHeader.className = "timeline-super-cell timeline-super-current";
-  currentHeader.textContent = "TAHUN ANGGARAN BERKENAAN";
+  currentHeader.textContent = "TAHUN ANGGARAN BERKENAAN (N)";
   el.timelineSuperHeader.appendChild(currentHeader);
 
   const spacer = document.createElement("div");
@@ -184,7 +182,6 @@ function buildHeader(tahunAnggaran) {
 
 function buildEmptyTrack(container) {
   container.innerHTML = "";
-
   for (let i = 0; i < TIMELINE_MONTHS.length; i++) {
     const cell = document.createElement("div");
     cell.className = "timeline-cell";
@@ -209,7 +206,7 @@ function fillTrackByRange(container, tahunAnggaran, startDate, endDate, fillClas
 }
 
 function buildTimeline(tahunAnggaran, ranges) {
-  buildHeader(tahunAnggaran);
+  buildHeader();
 
   fillTrackByRange(
     el.rowPersiapan,
@@ -248,14 +245,170 @@ function buildTimeline(tahunAnggaran, ranges) {
   );
 }
 
-function setMethodDefaults() {
+function getMethodOptions(jenisPengadaan, pagu, katalog) {
+  const isKatalog = katalog === "ya";
+  const options = [];
+  let ruleText = "";
+
+  if (jenisPengadaan === "Barang" || jenisPengadaan === "Jasa Lainnya") {
+    if (pagu <= 200000000) {
+      options.push("Pengadaan Langsung / ePL", "Tender Cepat", "Tender");
+      if (isKatalog) options.unshift("e-Purchasing");
+      ruleText = "Untuk Barang/Jasa Lainnya sampai Rp200 juta, Pengadaan Langsung masih dimungkinkan. Jika tersedia di katalog, E-purchasing juga bisa dipertimbangkan.";
+    } else {
+      options.push("Tender Cepat", "Tender");
+      if (isKatalog) options.unshift("e-Purchasing");
+      ruleText = "Untuk Barang/Jasa Lainnya di atas Rp200 juta, Pengadaan Langsung tidak dimunculkan. Pertimbangkan Tender, atau E-purchasing bila tersedia di katalog.";
+    }
+  } else if (jenisPengadaan === "Pekerjaan Konstruksi") {
+    if (pagu <= 400000000) {
+      options.push("Pengadaan Langsung / ePL", "Tender Cepat", "Tender");
+      if (isKatalog) options.unshift("e-Purchasing");
+      ruleText = "Untuk Pekerjaan Konstruksi sampai Rp400 juta, Pengadaan Langsung masih dimungkinkan.";
+    } else {
+      options.push("Tender Cepat", "Tender");
+      if (isKatalog) options.unshift("e-Purchasing");
+      ruleText = "Untuk Pekerjaan Konstruksi di atas Rp400 juta, Pengadaan Langsung tidak dimunculkan. Arahkan ke Tender, atau E-purchasing bila kategori tersedia di katalog.";
+    }
+  } else if (jenisPengadaan === "Jasa Konsultansi") {
+    if (pagu <= 100000000) {
+      options.push("Pengadaan Langsung / ePL", "Seleksi");
+      if (isKatalog) options.unshift("e-Purchasing");
+      ruleText = "Untuk Jasa Konsultansi sampai Rp100 juta, Pengadaan Langsung masih dimungkinkan.";
+    } else {
+      options.push("Seleksi");
+      if (isKatalog) options.unshift("e-Purchasing");
+      ruleText = "Untuk Jasa Konsultansi di atas Rp100 juta, metode yang lebih sesuai adalah Seleksi. E-purchasing hanya dimunculkan jika tersedia di katalog.";
+    }
+  }
+
+  return { options, ruleText };
+}
+
+function populateMethodOptions() {
+  const jenisPengadaan = el.jenisPengadaan.value;
+  const pagu = parseNumberInput(el.paguPaket.value);
+  const katalog = el.tersediaKatalog.value;
+  const currentValue = el.metodePemilihan.value;
+
+  const { options, ruleText } = getMethodOptions(jenisPengadaan, pagu, katalog);
+
+  el.metodePemilihan.innerHTML = "";
+
+  options.forEach((method) => {
+    const option = document.createElement("option");
+    option.value = method;
+    option.textContent = method;
+    el.metodePemilihan.appendChild(option);
+  });
+
+  if (options.includes(currentValue)) {
+    el.metodePemilihan.value = currentValue;
+  } else {
+    el.metodePemilihan.value = options[0] || "";
+  }
+
+  el.infoRule.innerHTML = ruleText || "Pilih jenis pengadaan, pagu, dan katalog untuk melihat metode yang sesuai.";
+  updateMethodDefaults();
+}
+
+function updateMethodDefaults() {
   const method = el.metodePemilihan.value;
-  const defaults = METHOD_DEFAULTS[method];
+  const rule = METHOD_RULES[method];
+  if (!rule) return;
 
-  if (!defaults) return;
+  el.durasiPemilihan.value = rule.default;
+  el.waktuPersiapanAwal.value = rule.prep;
 
-  el.durasiPemilihan.value = defaults.duration;
-  el.waktuPersiapanAwal.value = defaults.prep;
+  let helpText = `Default durasi untuk ${method} adalah ${rule.default} hari.`;
+  if (method === "Tender" || method === "Seleksi") {
+    helpText += ` Anda masih bisa mengubah manual, tetapi sistem akan memberi warning jika terlalu pendek atau terlalu panjang.`;
+  }
+  if (method === "Tender Cepat") {
+    helpText += ` Metode ini cocok untuk proses yang sangat singkat.`;
+  }
+
+  el.helpDurasiPemilihan.textContent = helpText;
+}
+
+function evaluateMethodSuitability(jenisPengadaan, pagu, katalog, metode) {
+  const isKatalog = katalog === "ya";
+
+  if (metode === "e-Purchasing" && !isKatalog) {
+    return {
+      status: "Belum cocok",
+      advice: "E-purchasing dipilih, tetapi paket ditandai tidak tersedia di katalog. Ubah ke metode lain atau ubah status katalog jika memang tersedia."
+    };
+  }
+
+  if ((jenisPengadaan === "Barang" || jenisPengadaan === "Jasa Lainnya") && metode === "Pengadaan Langsung / ePL" && pagu > 200000000) {
+    return {
+      status: "Belum cocok",
+      advice: "Untuk Barang/Jasa Lainnya di atas Rp200 juta, Pengadaan Langsung sebaiknya tidak dipakai. Pertimbangkan Tender atau E-purchasing bila tersedia di katalog."
+    };
+  }
+
+  if (jenisPengadaan === "Pekerjaan Konstruksi" && metode === "Pengadaan Langsung / ePL" && pagu > 400000000) {
+    return {
+      status: "Belum cocok",
+      advice: "Untuk Pekerjaan Konstruksi di atas Rp400 juta, Pengadaan Langsung sebaiknya tidak dipakai. Arahkan ke Tender atau E-purchasing bila tersedia di katalog."
+    };
+  }
+
+  if (jenisPengadaan === "Jasa Konsultansi" && metode === "Pengadaan Langsung / ePL" && pagu > 100000000) {
+    return {
+      status: "Belum cocok",
+      advice: "Untuk Jasa Konsultansi di atas Rp100 juta, metode yang lebih sesuai adalah Seleksi, atau E-purchasing bila tersedia di katalog."
+    };
+  }
+
+  if (jenisPengadaan === "Jasa Konsultansi" && (metode === "Tender" || metode === "Tender Cepat")) {
+    return {
+      status: "Perlu dicek",
+      advice: "Untuk Jasa Konsultansi, metode yang lazim adalah Seleksi. Cek kembali jika Anda berniat menggunakan metode lain."
+    };
+  }
+
+  if ((jenisPengadaan === "Barang" || jenisPengadaan === "Pekerjaan Konstruksi" || jenisPengadaan === "Jasa Lainnya") && metode === "Seleksi") {
+    return {
+      status: "Perlu dicek",
+      advice: "Seleksi umumnya dipakai untuk Jasa Konsultansi. Untuk jenis pengadaan ini, cek kembali apakah metodenya sudah tepat."
+    };
+  }
+
+  return {
+    status: "Sesuai",
+    advice: "Metode yang dipilih masih masuk akal untuk simulasi ini. Lanjutkan dengan pengecekan jadwal dan kesiapan dokumen."
+  };
+}
+
+function evaluateDuration(method, duration) {
+  const rule = METHOD_RULES[method];
+  if (!rule) {
+    return {
+      type: "warning",
+      text: "Durasi belum memiliki rule khusus. Cek kembali secara manual."
+    };
+  }
+
+  if (duration < rule.min) {
+    return {
+      type: "warning",
+      text: `Durasi ${method} terlalu singkat. Minimal kewajaran simulasi untuk metode ini adalah ${rule.min} hari.`
+    };
+  }
+
+  if (duration > rule.max) {
+    return {
+      type: "warning",
+      text: `Durasi ${method} cukup panjang. Batas kewajaran simulasi untuk metode ini adalah ${rule.max} hari. Pastikan sesuai kompleksitas paket.`
+    };
+  }
+
+  return {
+    type: "valid",
+    text: `Durasi ${method} masih dalam rentang kewajaran simulasi.`
+  };
 }
 
 function setStatus(type, html) {
@@ -276,40 +429,27 @@ function renderSimulation() {
   const tahun = Number(el.tahunAnggaran.value || 0);
   const jenisKontrak = el.jenisKontrak.value;
   const jenisPengadaan = el.jenisPengadaan.value;
+  const pagu = parseNumberInput(el.paguPaket.value);
+  const katalog = el.tersediaKatalog.value;
   const metode = el.metodePemilihan.value;
   const durasiPemilihanHari = Number(el.durasiPemilihan.value || 0);
   const waktuPersiapanAwalHari = Number(el.waktuPersiapanAwal.value || 0);
   const durasiPekerjaanBulan = Number(el.durasiPekerjaan.value || 0);
   const mulaiPelaksanaan = parseLocalDate(el.mulaiPelaksanaan.value);
 
-  if (
-    !tahun ||
-    !mulaiPelaksanaan ||
-    durasiPemilihanHari < 1 ||
-    durasiPekerjaanBulan < 1 ||
-    waktuPersiapanAwalHari < 0
-  ) {
-    setStatus(
-      "warning",
-      "Input belum lengkap atau belum valid. Pastikan seluruh field sudah terisi dengan benar."
-    );
+  if (!tahun || !mulaiPelaksanaan || !pagu || durasiPemilihanHari < 1 || durasiPekerjaanBulan < 1 || waktuPersiapanAwalHari < 0) {
+    setStatus("warning", "Input belum lengkap atau belum valid. Pastikan tahun, pagu, metode, durasi, dan target mulai pelaksanaan sudah terisi.");
     return;
   }
 
+  const methodCheck = evaluateMethodSuitability(jenisPengadaan, pagu, katalog, metode);
+  const durationCheck = evaluateDuration(metode, durasiPemilihanHari);
+
   const mulaiKontrak = new Date(mulaiPelaksanaan);
-  const selesaiPelaksanaan = addDays(
-    addMonths(mulaiPelaksanaan, durasiPekerjaanBulan),
-    -1
-  );
+  const selesaiPelaksanaan = addDays(addMonths(mulaiPelaksanaan, durasiPekerjaanBulan), -1);
   const selesaiPemilihan = addDays(mulaiPelaksanaan, -1);
-  const mulaiPemilihan = addDays(
-    selesaiPemilihan,
-    -(durasiPemilihanHari - 1)
-  );
-  const mulaiPersiapan = addDays(
-    mulaiPemilihan,
-    -waktuPersiapanAwalHari
-  );
+  const mulaiPemilihan = addDays(selesaiPemilihan, -(durasiPemilihanHari - 1));
+  const mulaiPersiapan = addDays(mulaiPemilihan, -waktuPersiapanAwalHari);
 
   const akhirTahunAnggaran = new Date(tahun, 11, 31);
   const awalPraTahun = new Date(tahun - 1, 8, 1);
@@ -327,19 +467,13 @@ function renderSimulation() {
       statusJadwal = "Belum cocok";
       kesimpulan = "Jadwal belum cocok untuk kontrak tahunan";
       saran = "Pertimbangkan memajukan jadwal atau menggunakan kontrak jamak.";
-      catatan = `
-        Jadwal ini melewati batas tahun anggaran <strong>${tahun}</strong>.
-        Untuk kontrak tahunan, pekerjaan seharusnya selesai paling lambat 31 Desember ${tahun}.
-      `;
+      catatan = `Jadwal ini melewati batas tahun anggaran <strong>${tahun}</strong>. Untuk kontrak tahunan, pekerjaan seharusnya selesai paling lambat 31 Desember ${tahun}.`;
     } else if (mulaiPersiapan < awalPraTahun) {
       statusType = "warning";
       statusJadwal = "Terlalu awal";
       kesimpulan = "Paket sebaiknya disiapkan jauh sebelum periode simulasi";
       saran = "Durasi paket cukup panjang. Disarankan penyusunan dokumen dimulai lebih awal lagi.";
-      catatan = `
-        Jadwal persiapan ideal dimulai sebelum <strong>September ${tahun - 1}</strong>.
-        Ini menunjukkan paket berdurasi panjang dan perlu perhatian khusus sejak awal.
-      `;
+      catatan = `Jadwal persiapan ideal dimulai sebelum <strong>September ${tahun - 1}</strong>. Ini menunjukkan paket berdurasi panjang dan perlu perhatian khusus sejak awal.`;
     } else {
       const sisaHari = diffDays(selesaiPelaksanaan, akhirTahunAnggaran);
 
@@ -348,29 +482,19 @@ function renderSimulation() {
         statusJadwal = "Mulai lebih awal";
         kesimpulan = "Sebaiknya disiapkan sejak akhir tahun sebelumnya";
         saran = "Agar aman, proses persiapan dan pemilihan jangan menunggu tahun anggaran berjalan.";
-        catatan = `
-          Paket ini masih bisa selesai dalam tahun anggaran <strong>${tahun}</strong>,
-          namun jadwal ideal menunjukkan bahwa persiapan sebaiknya sudah dimulai sejak
-          akhir tahun sebelumnya.
-        `;
+        catatan = `Paket ini masih bisa selesai dalam tahun anggaran <strong>${tahun}</strong>, namun jadwal ideal menunjukkan bahwa persiapan sebaiknya sudah dimulai sejak akhir tahun sebelumnya.`;
       } else if (sisaHari <= 30) {
         statusType = "warning";
         statusJadwal = "Mepet";
         kesimpulan = "Jadwal cukup mepet akhir tahun";
         saran = "Disarankan memajukan persiapan atau pemilihan agar pelaksanaan tidak menumpuk di akhir tahun.";
-        catatan = `
-          Jadwal masih berada dalam tahun anggaran <strong>${tahun}</strong>,
-          tetapi waktu penyelesaian cukup mepet dengan akhir tahun.
-        `;
+        catatan = `Jadwal masih berada dalam tahun anggaran <strong>${tahun}</strong>, tetapi waktu penyelesaian cukup mepet dengan akhir tahun.`;
       } else {
         statusType = "valid";
         statusJadwal = "Aman";
         kesimpulan = "Jadwal masih aman";
         saran = "Paket dapat diproses pada tahun anggaran berjalan sesuai simulasi ini.";
-        catatan = `
-          Jadwal masih aman dalam tahun anggaran <strong>${tahun}</strong>.
-          Pelaksanaan diperkirakan selesai sebelum 31 Desember ${tahun}.
-        `;
+        catatan = `Jadwal masih aman dalam tahun anggaran <strong>${tahun}</strong>. Pelaksanaan diperkirakan selesai sebelum 31 Desember ${tahun}.`;
       }
     }
   } else {
@@ -379,66 +503,69 @@ function renderSimulation() {
       statusJadwal = "Panjang";
       kesimpulan = "Paket berdurasi panjang";
       saran = "Karena paket cukup panjang, penyusunan dokumen dan kesiapan internal sebaiknya dimulai lebih awal.";
-      catatan = `
-        Untuk kontrak jamak, jadwal ini masih memungkinkan,
-        namun persiapan ideal dimulai sebelum periode simulasi yang ditampilkan.
-      `;
+      catatan = `Untuk kontrak jamak, jadwal ini masih memungkinkan, namun persiapan ideal dimulai sebelum periode simulasi yang ditampilkan.`;
     } else if (mulaiPersiapan.getFullYear() < tahun) {
       statusType = "valid";
       statusJadwal = "Aman";
       kesimpulan = "Cocok untuk kontrak jamak";
       saran = "Paket dapat disiapkan sejak akhir tahun sebelumnya agar pelaksanaan lebih rapi.";
-      catatan = `
-        Jadwal dapat dilaksanakan sebagai <strong>kontrak jamak</strong>,
-        dan persiapan sejak akhir tahun sebelumnya justru membantu pelaksanaan lebih tertib.
-      `;
+      catatan = `Jadwal dapat dilaksanakan sebagai <strong>kontrak jamak</strong>, dan persiapan sejak akhir tahun sebelumnya justru membantu pelaksanaan lebih tertib.`;
     } else {
       statusType = "valid";
       statusJadwal = "Aman";
       kesimpulan = "Cocok untuk kontrak jamak";
       saran = "Paket dapat dilanjutkan sesuai simulasi, dengan tetap memperhatikan kesiapan dokumen dan anggaran.";
-      catatan = `
-        Jadwal dapat dilaksanakan sebagai <strong>kontrak jamak</strong>,
-        dengan catatan tetap menyesuaikan ketentuan penganggaran dan kontrak yang berlaku.
-      `;
+      catatan = `Jadwal dapat dilaksanakan sebagai <strong>kontrak jamak</strong>, dengan catatan tetap menyesuaikan ketentuan penganggaran dan kontrak yang berlaku.`;
     }
   }
 
-  el.badgeMetode.textContent = metode;
+  let statusHtmlType = statusType;
+  const extraWarnings = [];
 
+  if (methodCheck.status !== "Sesuai") {
+    statusHtmlType = "warning";
+    extraWarnings.push(methodCheck.advice);
+  }
+
+  if (durationCheck.type === "warning") {
+    statusHtmlType = "warning";
+    extraWarnings.push(durationCheck.text);
+  }
+
+  el.badgeMetode.textContent = metode;
+  el.outPaguPaket.textContent = formatRupiah(pagu);
   el.outMulaiPersiapan.textContent = formatDateID(mulaiPersiapan);
   el.outMulaiPemilihan.textContent = formatDateID(mulaiPemilihan);
   el.outSelesaiPemilihan.textContent = formatDateID(selesaiPemilihan);
   el.outMulaiKontrak.textContent = formatDateID(mulaiKontrak);
   el.outSelesaiPelaksanaan.textContent = formatDateID(selesaiPelaksanaan);
   el.outDurasiTotal.textContent = `${totalDurasiHari.toLocaleString("id-ID")} Hari`;
+  el.outStatusMetode.textContent = methodCheck.status;
+  el.outSaranMetode.textContent = methodCheck.advice;
   el.outStatusJadwal.textContent = statusJadwal;
   el.outSaranSistem.textContent = saran;
 
-  if (statusType === "valid") {
-    setStatus("valid", `<strong>${kesimpulan}</strong><br>${catatan}`);
-  } else if (statusType === "invalid") {
-    setStatus("invalid", `<strong>${kesimpulan}</strong><br>${catatan}`);
-  } else {
-    setStatus("warning", `<strong>${kesimpulan}</strong><br>${catatan}`);
+  let combinedHtml = `<strong>${kesimpulan}</strong><br>${catatan}`;
+  if (extraWarnings.length) {
+    combinedHtml += `<br><br><strong>Catatan tambahan:</strong><br>${extraWarnings.map((x) => `• ${x}`).join("<br>")}`;
   }
+
+  setStatus(statusHtmlType, combinedHtml);
 
   el.detailTahun.textContent = tahun;
   el.detailJenisPengadaan.textContent = jenisPengadaan;
+  el.detailPaguPaket.textContent = formatRupiah(pagu);
+  el.detailKatalog.textContent = katalog === "ya" ? "Ya" : "Tidak";
   el.detailMetode.textContent = metode;
-  el.detailJenisKontrak.textContent = jenisKontrak === "single"
-    ? "Kontrak Tahunan (Single Year)"
-    : "Kontrak Jamak (Multi Year)";
+  el.detailJenisKontrak.textContent = jenisKontrak === "single" ? "Kontrak Tahunan (Single Year)" : "Kontrak Jamak (Multi Year)";
   el.detailDurasiPemilihan.textContent = `${durasiPemilihanHari} Hari`;
   el.detailWaktuPersiapanAwal.textContent = `${waktuPersiapanAwalHari} Hari`;
   el.detailDurasiPekerjaan.textContent = `${durasiPekerjaanBulan} Bulan`;
   el.detailMulaiPelaksanaan.textContent = formatDateID(mulaiPelaksanaan);
   el.detailKesimpulan.innerHTML = `<strong>${kesimpulan}</strong>`;
-  el.catatanTambahan.innerHTML = catatan;
+  el.catatanTambahan.innerHTML = combinedHtml;
 
-  const bufferStart = selesaiPelaksanaan <= akhirTahunAnggaran
-    ? addDays(selesaiPelaksanaan, 1)
-    : new Date(tahun, 11, 31);
+  const bufferStart = selesaiPelaksanaan <= akhirTahunAnggaran ? addDays(selesaiPelaksanaan, 1) : new Date(tahun, 11, 31);
 
   const ranges = {
     persiapan: {
@@ -466,12 +593,13 @@ function resetForm() {
   el.tahunAnggaran.value = "2026";
   el.jenisKontrak.value = "single";
   el.jenisPengadaan.value = "Barang";
+  el.paguPaket.value = "150.000.000";
+  el.tersediaKatalog.value = "tidak";
+  populateMethodOptions();
   el.metodePemilihan.value = "Pengadaan Langsung / ePL";
-  el.durasiPemilihan.value = "7";
-  el.waktuPersiapanAwal.value = "7";
+  updateMethodDefaults();
   el.durasiPekerjaan.value = "12";
   el.mulaiPelaksanaan.value = "2026-04-01";
-
   renderSimulation();
 }
 
@@ -483,7 +611,11 @@ function toggleSidebar() {
   el.sidebar.classList.toggle("collapsed");
 }
 
-el.metodePemilihan.addEventListener("change", setMethodDefaults);
+el.paguPaket.addEventListener("input", formatPaguInput);
+el.jenisPengadaan.addEventListener("change", populateMethodOptions);
+el.tersediaKatalog.addEventListener("change", populateMethodOptions);
+el.metodePemilihan.addEventListener("change", updateMethodDefaults);
+
 el.btnSimulasikan.addEventListener("click", renderSimulation);
 el.btnReset.addEventListener("click", resetForm);
 el.btnExportPdf.addEventListener("click", exportPdf);
@@ -491,8 +623,8 @@ el.btnExportPdfTop.addEventListener("click", exportPdf);
 el.sidebarToggle.addEventListener("click", toggleSidebar);
 
 function init() {
-  el.metodePemilihan.value = "Pengadaan Langsung / ePL";
-  setMethodDefaults();
+  formatPaguInput();
+  populateMethodOptions();
   renderSimulation();
 }
 
