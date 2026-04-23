@@ -21,9 +21,23 @@ const METHOD_DEFAULTS = {
   }
 };
 
-const MONTH_NAMES = [
-  "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
-  "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
+const TIMELINE_MONTHS = [
+  { key: "prev-09", label: "Sep", yearOffset: -1, month: 8 },
+  { key: "prev-10", label: "Okt", yearOffset: -1, month: 9 },
+  { key: "prev-11", label: "Nov", yearOffset: -1, month: 10 },
+  { key: "prev-12", label: "Des", yearOffset: -1, month: 11 },
+  { key: "curr-01", label: "Jan", yearOffset: 0, month: 0 },
+  { key: "curr-02", label: "Feb", yearOffset: 0, month: 1 },
+  { key: "curr-03", label: "Mar", yearOffset: 0, month: 2 },
+  { key: "curr-04", label: "Apr", yearOffset: 0, month: 3 },
+  { key: "curr-05", label: "Mei", yearOffset: 0, month: 4 },
+  { key: "curr-06", label: "Jun", yearOffset: 0, month: 5 },
+  { key: "curr-07", label: "Jul", yearOffset: 0, month: 6 },
+  { key: "curr-08", label: "Agu", yearOffset: 0, month: 7 },
+  { key: "curr-09", label: "Sep", yearOffset: 0, month: 8 },
+  { key: "curr-10", label: "Okt", yearOffset: 0, month: 9 },
+  { key: "curr-11", label: "Nov", yearOffset: 0, month: 10 },
+  { key: "curr-12", label: "Des", yearOffset: 0, month: 11 }
 ];
 
 const el = {
@@ -52,6 +66,8 @@ const el = {
   outMulaiKontrak: document.getElementById("outMulaiKontrak"),
   outSelesaiPelaksanaan: document.getElementById("outSelesaiPelaksanaan"),
   outDurasiTotal: document.getElementById("outDurasiTotal"),
+  outStatusJadwal: document.getElementById("outStatusJadwal"),
+  outSaranSistem: document.getElementById("outSaranSistem"),
 
   statusBox: document.getElementById("statusBox"),
 
@@ -60,6 +76,9 @@ const el = {
   rowPemilihan: document.getElementById("rowPemilihan"),
   rowPelaksanaan: document.getElementById("rowPelaksanaan"),
   rowAkhir: document.getElementById("rowAkhir"),
+
+  groupLeftLabel: document.getElementById("groupLeftLabel"),
+  groupRightLabel: document.getElementById("groupRightLabel"),
 
   detailTahun: document.getElementById("detailTahun"),
   detailJenisPengadaan: document.getElementById("detailJenisPengadaan"),
@@ -124,10 +143,10 @@ function diffDays(start, end) {
   return Math.round(ms / (1000 * 60 * 60 * 24));
 }
 
-function getMonthRange(year, monthIndex) {
-  const start = new Date(year, monthIndex, 1);
-  const end = new Date(year, monthIndex + 1, 0);
-
+function getTimelineMonthRange(tahunAnggaran, timelineItem) {
+  const year = tahunAnggaran + timelineItem.yearOffset;
+  const start = new Date(year, timelineItem.month, 1);
+  const end = new Date(year, timelineItem.month + 1, 0);
   return { start, end };
 }
 
@@ -135,25 +154,29 @@ function isOverlap(rangeStart, rangeEnd, monthStart, monthEnd) {
   return rangeStart <= monthEnd && rangeEnd >= monthStart;
 }
 
-function buildHeader(year) {
+function buildHeader(tahunAnggaran) {
   el.timelineHeader.innerHTML = "";
 
   const spacer = document.createElement("div");
   spacer.className = "timeline-spacer";
   el.timelineHeader.appendChild(spacer);
 
-  MONTH_NAMES.forEach((month) => {
+  TIMELINE_MONTHS.forEach((item) => {
     const div = document.createElement("div");
     div.className = "timeline-month";
-    div.textContent = `${month} ${year}`;
+    const year = tahunAnggaran + item.yearOffset;
+    div.textContent = `${item.label} ${year}`;
     el.timelineHeader.appendChild(div);
   });
+
+  el.groupLeftLabel.textContent = `Pra-Tahun Anggaran (${tahunAnggaran - 1})`;
+  el.groupRightLabel.textContent = `Tahun Anggaran ${tahunAnggaran}`;
 }
 
 function buildEmptyTrack(container) {
   container.innerHTML = "";
 
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < TIMELINE_MONTHS.length; i++) {
     const cell = document.createElement("div");
     cell.className = "timeline-cell";
     cell.textContent = "";
@@ -161,11 +184,12 @@ function buildEmptyTrack(container) {
   }
 }
 
-function fillTrackByRange(container, year, startDate, endDate, fillClass, label) {
+function fillTrackByRange(container, tahunAnggaran, startDate, endDate, fillClass, label) {
   buildEmptyTrack(container);
 
-  for (let i = 0; i < 12; i++) {
-    const monthRange = getMonthRange(year, i);
+  for (let i = 0; i < TIMELINE_MONTHS.length; i++) {
+    const timelineItem = TIMELINE_MONTHS[i];
+    const monthRange = getTimelineMonthRange(tahunAnggaran, timelineItem);
     const cell = container.children[i];
 
     if (isOverlap(startDate, endDate, monthRange.start, monthRange.end)) {
@@ -175,12 +199,12 @@ function fillTrackByRange(container, year, startDate, endDate, fillClass, label)
   }
 }
 
-function buildTimeline(year, ranges) {
-  buildHeader(year);
+function buildTimeline(tahunAnggaran, ranges) {
+  buildHeader(tahunAnggaran);
 
   fillTrackByRange(
     el.rowPersiapan,
-    year,
+    tahunAnggaran,
     ranges.persiapan.start,
     ranges.persiapan.end,
     "fill-persiapan",
@@ -189,7 +213,7 @@ function buildTimeline(year, ranges) {
 
   fillTrackByRange(
     el.rowPemilihan,
-    year,
+    tahunAnggaran,
     ranges.pemilihan.start,
     ranges.pemilihan.end,
     "fill-pemilihan",
@@ -198,7 +222,7 @@ function buildTimeline(year, ranges) {
 
   fillTrackByRange(
     el.rowPelaksanaan,
-    year,
+    tahunAnggaran,
     ranges.pelaksanaan.start,
     ranges.pelaksanaan.end,
     "fill-pelaksanaan",
@@ -207,7 +231,7 @@ function buildTimeline(year, ranges) {
 
   fillTrackByRange(
     el.rowAkhir,
-    year,
+    tahunAnggaran,
     ranges.akhir.start,
     ranges.akhir.end,
     "fill-akhir",
@@ -279,43 +303,61 @@ function renderSimulation() {
   );
 
   const akhirTahunAnggaran = new Date(tahun, 11, 31);
+  const awalPraTahun = new Date(tahun - 1, 8, 1);
   const totalDurasiHari = diffDays(mulaiPersiapan, selesaiPelaksanaan) + 1;
 
-  const sisaAkhirTahunStart = selesaiPelaksanaan <= akhirTahunAnggaran
-    ? addDays(selesaiPelaksanaan, 1)
-    : new Date(tahun, 11, 31);
-
-  const sisaAkhirTahunEnd = akhirTahunAnggaran;
-
   let statusType = "valid";
+  let statusJadwal = "";
   let kesimpulan = "";
+  let saran = "";
   let catatan = "";
 
   if (jenisKontrak === "single") {
     if (selesaiPelaksanaan > akhirTahunAnggaran) {
       statusType = "invalid";
-      kesimpulan = "Tidak valid untuk Single Year";
+      statusJadwal = "Belum cocok";
+      kesimpulan = "Jadwal belum cocok untuk kontrak tahunan";
+      saran = "Pertimbangkan memajukan jadwal atau menggunakan kontrak jamak.";
       catatan = `
         Jadwal ini melewati batas tahun anggaran <strong>${tahun}</strong>.
-        Jika tetap ingin dilaksanakan dengan durasi tersebut, maka perlu
-        mempertimbangkan skema <strong>multi year</strong> atau memajukan
-        target mulai pelaksanaan.
+        Untuk kontrak tahunan, pekerjaan seharusnya selesai paling lambat 31 Desember ${tahun}.
+      `;
+    } else if (mulaiPersiapan < awalPraTahun) {
+      statusType = "warning";
+      statusJadwal = "Terlalu awal";
+      kesimpulan = "Paket sebaiknya disiapkan jauh sebelum periode simulasi";
+      saran = "Durasi paket cukup panjang. Disarankan penyusunan dokumen dimulai lebih awal lagi.";
+      catatan = `
+        Jadwal persiapan ideal dimulai sebelum <strong>September ${tahun - 1}</strong>.
+        Ini menunjukkan paket berdurasi panjang dan perlu perhatian khusus sejak awal.
       `;
     } else {
       const sisaHari = diffDays(selesaiPelaksanaan, akhirTahunAnggaran);
 
-      if (sisaHari <= 30) {
+      if (mulaiPersiapan.getFullYear() < tahun) {
         statusType = "warning";
-        kesimpulan = "Valid, namun mepet akhir tahun";
+        statusJadwal = "Mulai lebih awal";
+        kesimpulan = "Sebaiknya disiapkan sejak akhir tahun sebelumnya";
+        saran = "Agar aman, proses persiapan dan pemilihan jangan menunggu tahun anggaran berjalan.";
+        catatan = `
+          Paket ini masih bisa selesai dalam tahun anggaran <strong>${tahun}</strong>,
+          namun jadwal ideal menunjukkan bahwa persiapan sebaiknya sudah dimulai sejak
+          akhir tahun sebelumnya.
+        `;
+      } else if (sisaHari <= 30) {
+        statusType = "warning";
+        statusJadwal = "Mepet";
+        kesimpulan = "Jadwal cukup mepet akhir tahun";
+        saran = "Disarankan memajukan persiapan atau pemilihan agar pelaksanaan tidak menumpuk di akhir tahun.";
         catatan = `
           Jadwal masih berada dalam tahun anggaran <strong>${tahun}</strong>,
           tetapi waktu penyelesaian cukup mepet dengan akhir tahun.
-          Disarankan melakukan percepatan pada tahap persiapan atau pemilihan
-          agar lebih aman.
         `;
       } else {
         statusType = "valid";
-        kesimpulan = "Valid untuk Single Year";
+        statusJadwal = "Aman";
+        kesimpulan = "Jadwal masih aman";
+        saran = "Paket dapat diproses pada tahun anggaran berjalan sesuai simulasi ini.";
         catatan = `
           Jadwal masih aman dalam tahun anggaran <strong>${tahun}</strong>.
           Pelaksanaan diperkirakan selesai sebelum 31 Desember ${tahun}.
@@ -323,13 +365,34 @@ function renderSimulation() {
       }
     }
   } else {
-    statusType = "valid";
-    kesimpulan = "Valid untuk Multi Year";
-    catatan = `
-      Jadwal dapat dilaksanakan sebagai <strong>multi year</strong>,
-      dengan catatan tetap menyesuaikan ketentuan penganggaran,
-      kontrak, dan persetujuan yang berlaku.
-    `;
+    if (mulaiPersiapan < awalPraTahun) {
+      statusType = "warning";
+      statusJadwal = "Panjang";
+      kesimpulan = "Paket berdurasi panjang";
+      saran = "Karena paket cukup panjang, penyusunan dokumen dan kesiapan internal sebaiknya dimulai lebih awal.";
+      catatan = `
+        Untuk kontrak jamak, jadwal ini masih memungkinkan,
+        namun persiapan ideal dimulai sebelum periode simulasi yang ditampilkan.
+      `;
+    } else if (mulaiPersiapan.getFullYear() < tahun) {
+      statusType = "valid";
+      statusJadwal = "Aman";
+      kesimpulan = "Cocok untuk kontrak jamak";
+      saran = "Paket dapat disiapkan sejak akhir tahun sebelumnya agar pelaksanaan lebih rapi.";
+      catatan = `
+        Jadwal dapat dilaksanakan sebagai <strong>kontrak jamak</strong>,
+        dan persiapan sejak akhir tahun sebelumnya justru membantu pelaksanaan lebih tertib.
+      `;
+    } else {
+      statusType = "valid";
+      statusJadwal = "Aman";
+      kesimpulan = "Cocok untuk kontrak jamak";
+      saran = "Paket dapat dilanjutkan sesuai simulasi, dengan tetap memperhatikan kesiapan dokumen dan anggaran.";
+      catatan = `
+        Jadwal dapat dilaksanakan sebagai <strong>kontrak jamak</strong>,
+        dengan catatan tetap menyesuaikan ketentuan penganggaran dan kontrak yang berlaku.
+      `;
+    }
   }
 
   el.badgeMetode.textContent = metode;
@@ -340,6 +403,8 @@ function renderSimulation() {
   el.outMulaiKontrak.textContent = formatDateID(mulaiKontrak);
   el.outSelesaiPelaksanaan.textContent = formatDateID(selesaiPelaksanaan);
   el.outDurasiTotal.textContent = `${totalDurasiHari.toLocaleString("id-ID")} Hari`;
+  el.outStatusJadwal.textContent = statusJadwal;
+  el.outSaranSistem.textContent = saran;
 
   if (statusType === "valid") {
     setStatus("valid", `<strong>${kesimpulan}</strong><br>${catatan}`);
@@ -353,14 +418,18 @@ function renderSimulation() {
   el.detailJenisPengadaan.textContent = jenisPengadaan;
   el.detailMetode.textContent = metode;
   el.detailJenisKontrak.textContent = jenisKontrak === "single"
-    ? "Single Year"
-    : "Multi Year";
+    ? "Kontrak Tahunan (Single Year)"
+    : "Kontrak Jamak (Multi Year)";
   el.detailDurasiPemilihan.textContent = `${durasiPemilihanHari} Hari`;
   el.detailWaktuPersiapanAwal.textContent = `${waktuPersiapanAwalHari} Hari`;
   el.detailDurasiPekerjaan.textContent = `${durasiPekerjaanBulan} Bulan`;
   el.detailMulaiPelaksanaan.textContent = formatDateID(mulaiPelaksanaan);
   el.detailKesimpulan.innerHTML = `<strong>${kesimpulan}</strong>`;
   el.catatanTambahan.innerHTML = catatan;
+
+  const bufferStart = selesaiPelaksanaan <= akhirTahunAnggaran
+    ? addDays(selesaiPelaksanaan, 1)
+    : new Date(tahun, 11, 31);
 
   const ranges = {
     persiapan: {
@@ -376,8 +445,8 @@ function renderSimulation() {
       end: selesaiPelaksanaan
     },
     akhir: {
-      start: sisaAkhirTahunStart,
-      end: sisaAkhirTahunEnd
+      start: bufferStart,
+      end: akhirTahunAnggaran
     }
   };
 
