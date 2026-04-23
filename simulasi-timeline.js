@@ -45,6 +45,10 @@ const el = {
   helpDurasiPemilihan: document.getElementById("helpDurasiPemilihan"),
   infoRule: document.getElementById("infoRule"),
 
+  btnWhyMethod: document.getElementById("btnWhyMethod"),
+  whyMethodBox: document.getElementById("whyMethodBox"),
+  whyMethodText: document.getElementById("whyMethodText"),
+
   btnSimulasikan: document.getElementById("btnSimulasikan"),
   btnReset: document.getElementById("btnReset"),
   btnExportPdf: document.getElementById("btnExportPdf"),
@@ -86,6 +90,8 @@ const el = {
   detailKesimpulan: document.getElementById("detailKesimpulan"),
   catatanTambahan: document.getElementById("catatanTambahan")
 };
+
+let methodExplanationCache = "";
 
 function parseLocalDate(dateString) {
   if (!dateString) return null;
@@ -208,81 +214,118 @@ function fillTrackByRange(container, tahunAnggaran, startDate, endDate, fillClas
 function buildTimeline(tahunAnggaran, ranges) {
   buildHeader();
 
-  fillTrackByRange(
-    el.rowPersiapan,
-    tahunAnggaran,
-    ranges.persiapan.start,
-    ranges.persiapan.end,
-    "fill-persiapan",
-    "Persiapan"
-  );
-
-  fillTrackByRange(
-    el.rowPemilihan,
-    tahunAnggaran,
-    ranges.pemilihan.start,
-    ranges.pemilihan.end,
-    "fill-pemilihan",
-    "Pilih"
-  );
-
-  fillTrackByRange(
-    el.rowPelaksanaan,
-    tahunAnggaran,
-    ranges.pelaksanaan.start,
-    ranges.pelaksanaan.end,
-    "fill-pelaksanaan",
-    "Kerja"
-  );
-
-  fillTrackByRange(
-    el.rowAkhir,
-    tahunAnggaran,
-    ranges.akhir.start,
-    ranges.akhir.end,
-    "fill-akhir",
-    "Buffer"
-  );
+  fillTrackByRange(el.rowPersiapan, tahunAnggaran, ranges.persiapan.start, ranges.persiapan.end, "fill-persiapan", "Persiapan");
+  fillTrackByRange(el.rowPemilihan, tahunAnggaran, ranges.pemilihan.start, ranges.pemilihan.end, "fill-pemilihan", "Pilih");
+  fillTrackByRange(el.rowPelaksanaan, tahunAnggaran, ranges.pelaksanaan.start, ranges.pelaksanaan.end, "fill-pelaksanaan", "Kerja");
+  fillTrackByRange(el.rowAkhir, tahunAnggaran, ranges.akhir.start, ranges.akhir.end, "fill-akhir", "Buffer");
 }
 
 function getMethodOptions(jenisPengadaan, pagu, katalog) {
   const isKatalog = katalog === "ya";
-  const options = [];
+  const allowed = [];
+  const hidden = [];
   let ruleText = "";
 
-  if (jenisPengadaan === "Barang" || jenisPengadaan === "Jasa Lainnya") {
-    if (pagu <= 200000000) {
-      options.push("Pengadaan Langsung / ePL", "Tender Cepat", "Tender");
-      if (isKatalog) options.unshift("e-Purchasing");
-      ruleText = "Untuk Barang/Jasa Lainnya sampai Rp200 juta, Pengadaan Langsung masih dimungkinkan. Jika tersedia di katalog, E-purchasing juga bisa dipertimbangkan.";
-    } else {
-      options.push("Tender Cepat", "Tender");
-      if (isKatalog) options.unshift("e-Purchasing");
-      ruleText = "Untuk Barang/Jasa Lainnya di atas Rp200 juta, Pengadaan Langsung tidak dimunculkan. Pertimbangkan Tender, atau E-purchasing bila tersedia di katalog.";
-    }
-  } else if (jenisPengadaan === "Pekerjaan Konstruksi") {
-    if (pagu <= 400000000) {
-      options.push("Pengadaan Langsung / ePL", "Tender Cepat", "Tender");
-      if (isKatalog) options.unshift("e-Purchasing");
-      ruleText = "Untuk Pekerjaan Konstruksi sampai Rp400 juta, Pengadaan Langsung masih dimungkinkan.";
-    } else {
-      options.push("Tender Cepat", "Tender");
-      if (isKatalog) options.unshift("e-Purchasing");
-      ruleText = "Untuk Pekerjaan Konstruksi di atas Rp400 juta, Pengadaan Langsung tidak dimunculkan. Arahkan ke Tender, atau E-purchasing bila kategori tersedia di katalog.";
-    }
-  } else if (jenisPengadaan === "Jasa Konsultansi") {
-    if (pagu <= 100000000) {
-      options.push("Pengadaan Langsung / ePL", "Seleksi");
-      if (isKatalog) options.unshift("e-Purchasing");
-      ruleText = "Untuk Jasa Konsultansi sampai Rp100 juta, Pengadaan Langsung masih dimungkinkan.";
-    } else {
-      options.push("Seleksi");
-      if (isKatalog) options.unshift("e-Purchasing");
-      ruleText = "Untuk Jasa Konsultansi di atas Rp100 juta, metode yang lebih sesuai adalah Seleksi. E-purchasing hanya dimunculkan jika tersedia di katalog.";
-    }
+  function allow(method) {
+    if (!allowed.includes(method)) allowed.push(method);
   }
 
-  return { options, ruleText };
+  function hide(method, reason) {
+    hidden.push({ method, reason });
+  }
+
+  if (jenisPengadaan === "Barang" || jenisPengadaan === "Jasa Lainnya") {
+    if (isKatalog) {
+      allow("e-Purchasing");
+    } else {
+      hide("e-Purchasing", "Tidak dimunculkan karena paket ditandai tidak tersedia di katalog.");
+    }
+
+    if (pagu <= 200000000) {
+      allow("Pengadaan Langsung / ePL");
+      allow("Tender Cepat");
+      allow("Tender");
+      hide("Seleksi", "Seleksi tidak digunakan untuk Barang/Jasa Lainnya.");
+      ruleText = "Untuk Barang/Jasa Lainnya sampai Rp200 juta, Pengadaan Langsung masih dimungkinkan.";
+    } else {
+      hide("Pengadaan Langsung / ePL", "Tidak dimunculkan karena Pengadaan Langsung untuk Barang/Jasa Lainnya dibatasi sampai Rp200 juta.");
+      allow("Tender Cepat");
+      allow("Tender");
+      hide("Seleksi", "Seleksi tidak digunakan untuk Barang/Jasa Lainnya.");
+      ruleText = "Untuk Barang/Jasa Lainnya di atas Rp200 juta, arahkan ke Tender atau E-purchasing bila tersedia di katalog.";
+    }
+
+    hide("Penunjukan Langsung", "Penunjukan Langsung tidak dimunculkan sebagai opsi normal simulasi ini karena hanya untuk kondisi tertentu.");
+  }
+
+  if (jenisPengadaan === "Pekerjaan Konstruksi") {
+    if (isKatalog) {
+      allow("e-Purchasing");
+    } else {
+      hide("e-Purchasing", "Tidak dimunculkan karena paket ditandai tidak tersedia di katalog.");
+    }
+
+    if (pagu <= 400000000) {
+      allow("Pengadaan Langsung / ePL");
+      allow("Tender Cepat");
+      allow("Tender");
+      hide("Seleksi", "Seleksi tidak digunakan untuk Pekerjaan Konstruksi.");
+      ruleText = "Untuk Pekerjaan Konstruksi sampai Rp400 juta, Pengadaan Langsung masih dimungkinkan.";
+    } else {
+      hide("Pengadaan Langsung / ePL", "Tidak dimunculkan karena Pengadaan Langsung untuk Pekerjaan Konstruksi dibatasi sampai Rp400 juta.");
+      allow("Tender Cepat");
+      allow("Tender");
+      hide("Seleksi", "Seleksi tidak digunakan untuk Pekerjaan Konstruksi.");
+      ruleText = "Untuk Pekerjaan Konstruksi di atas Rp400 juta, arahkan ke Tender atau E-purchasing bila tersedia di katalog.";
+    }
+
+    hide("Penunjukan Langsung", "Penunjukan Langsung tidak dimunculkan sebagai opsi normal simulasi ini karena hanya untuk kondisi tertentu.");
+  }
+
+  if (jenisPengadaan === "Jasa Konsultansi") {
+    if (isKatalog) {
+      allow("e-Purchasing");
+    } else {
+      hide("e-Purchasing", "Tidak dimunculkan karena paket ditandai tidak tersedia di katalog.");
+    }
+
+    if (pagu <= 100000000) {
+      allow("Pengadaan Langsung / ePL");
+      allow("Seleksi");
+      hide("Tender Cepat", "Tender Cepat tidak digunakan untuk Jasa Konsultansi.");
+      hide("Tender", "Tender tidak digunakan sebagai metode lazim untuk Jasa Konsultansi.");
+      ruleText = "Untuk Jasa Konsultansi sampai Rp100 juta, Pengadaan Langsung masih dimungkinkan.";
+    } else {
+      hide("Pengadaan Langsung / ePL", "Tidak dimunculkan karena Pengadaan Langsung untuk Jasa Konsultansi dibatasi sampai Rp100 juta.");
+      allow("Seleksi");
+      hide("Tender Cepat", "Tender Cepat tidak digunakan untuk Jasa Konsultansi.");
+      hide("Tender", "Tender tidak digunakan sebagai metode lazim untuk Jasa Konsultansi.");
+      ruleText = "Untuk Jasa Konsultansi di atas Rp100 juta, metode yang lebih sesuai adalah Seleksi, atau E-purchasing bila tersedia di katalog.";
+    }
+
+    hide("Penunjukan Langsung", "Penunjukan Langsung tidak dimunculkan sebagai opsi normal simulasi ini karena hanya untuk kondisi tertentu.");
+  }
+
+  return { allowed, hidden, ruleText };
+}
+
+function buildWhyMethodText(jenisPengadaan, pagu, katalog, hiddenMethods) {
+  const lines = [];
+  lines.push(`Jenis Pengadaan: ${jenisPengadaan}`);
+  lines.push(`Pagu Paket: ${formatRupiah(pagu)}`);
+  lines.push(`Tersedia di Katalog: ${katalog === "ya" ? "Ya" : "Tidak"}`);
+  lines.push("");
+  lines.push("Metode yang tidak ditampilkan:");
+
+  if (!hiddenMethods.length) {
+    lines.push("- Semua metode utama yang relevan sudah ditampilkan.");
+  } else {
+    hiddenMethods.forEach((item) => {
+      lines.push(`- ${item.method}: ${item.reason}`);
+    });
+  }
+
+  return lines.join("<br>");
 }
 
 function populateMethodOptions() {
@@ -291,24 +334,28 @@ function populateMethodOptions() {
   const katalog = el.tersediaKatalog.value;
   const currentValue = el.metodePemilihan.value;
 
-  const { options, ruleText } = getMethodOptions(jenisPengadaan, pagu, katalog);
+  const { allowed, hidden, ruleText } = getMethodOptions(jenisPengadaan, pagu, katalog);
 
   el.metodePemilihan.innerHTML = "";
 
-  options.forEach((method) => {
+  allowed.forEach((method) => {
     const option = document.createElement("option");
     option.value = method;
     option.textContent = method;
     el.metodePemilihan.appendChild(option);
   });
 
-  if (options.includes(currentValue)) {
+  if (allowed.includes(currentValue)) {
     el.metodePemilihan.value = currentValue;
   } else {
-    el.metodePemilihan.value = options[0] || "";
+    el.metodePemilihan.value = allowed[0] || "";
   }
 
   el.infoRule.innerHTML = ruleText || "Pilih jenis pengadaan, pagu, dan katalog untuk melihat metode yang sesuai.";
+  el.helpMetode.textContent = "Dropdown metode hanya menampilkan opsi yang lolos rule simulasi.";
+  methodExplanationCache = buildWhyMethodText(jenisPengadaan, pagu, katalog, hidden);
+  el.whyMethodText.innerHTML = methodExplanationCache;
+
   updateMethodDefaults();
 }
 
@@ -322,63 +369,35 @@ function updateMethodDefaults() {
 
   let helpText = `Default durasi untuk ${method} adalah ${rule.default} hari.`;
   if (method === "Tender" || method === "Seleksi") {
-    helpText += ` Anda masih bisa mengubah manual, tetapi sistem akan memberi warning jika terlalu pendek atau terlalu panjang.`;
+    helpText += " Anda masih bisa mengubah manual, tetapi sistem akan memberi warning jika terlalu pendek atau terlalu panjang.";
   }
   if (method === "Tender Cepat") {
-    helpText += ` Metode ini cocok untuk proses yang sangat singkat.`;
+    helpText += " Metode ini cocok untuk proses yang sangat singkat.";
   }
 
   el.helpDurasiPemilihan.textContent = helpText;
 }
 
 function evaluateMethodSuitability(jenisPengadaan, pagu, katalog, metode) {
-  const isKatalog = katalog === "ya";
+  const { allowed } = getMethodOptions(jenisPengadaan, pagu, katalog);
 
-  if (metode === "e-Purchasing" && !isKatalog) {
+  if (!allowed.includes(metode)) {
     return {
       status: "Belum cocok",
-      advice: "E-purchasing dipilih, tetapi paket ditandai tidak tersedia di katalog. Ubah ke metode lain atau ubah status katalog jika memang tersedia."
+      advice: "Metode ini tidak termasuk opsi yang lolos rule simulasi. Pilih metode yang disediakan sistem."
     };
   }
 
-  if ((jenisPengadaan === "Barang" || jenisPengadaan === "Jasa Lainnya") && metode === "Pengadaan Langsung / ePL" && pagu > 200000000) {
+  if (metode === "e-Purchasing") {
     return {
-      status: "Belum cocok",
-      advice: "Untuk Barang/Jasa Lainnya di atas Rp200 juta, Pengadaan Langsung sebaiknya tidak dipakai. Pertimbangkan Tender atau E-purchasing bila tersedia di katalog."
-    };
-  }
-
-  if (jenisPengadaan === "Pekerjaan Konstruksi" && metode === "Pengadaan Langsung / ePL" && pagu > 400000000) {
-    return {
-      status: "Belum cocok",
-      advice: "Untuk Pekerjaan Konstruksi di atas Rp400 juta, Pengadaan Langsung sebaiknya tidak dipakai. Arahkan ke Tender atau E-purchasing bila tersedia di katalog."
-    };
-  }
-
-  if (jenisPengadaan === "Jasa Konsultansi" && metode === "Pengadaan Langsung / ePL" && pagu > 100000000) {
-    return {
-      status: "Belum cocok",
-      advice: "Untuk Jasa Konsultansi di atas Rp100 juta, metode yang lebih sesuai adalah Seleksi, atau E-purchasing bila tersedia di katalog."
-    };
-  }
-
-  if (jenisPengadaan === "Jasa Konsultansi" && (metode === "Tender" || metode === "Tender Cepat")) {
-    return {
-      status: "Perlu dicek",
-      advice: "Untuk Jasa Konsultansi, metode yang lazim adalah Seleksi. Cek kembali jika Anda berniat menggunakan metode lain."
-    };
-  }
-
-  if ((jenisPengadaan === "Barang" || jenisPengadaan === "Pekerjaan Konstruksi" || jenisPengadaan === "Jasa Lainnya") && metode === "Seleksi") {
-    return {
-      status: "Perlu dicek",
-      advice: "Seleksi umumnya dipakai untuk Jasa Konsultansi. Untuk jenis pengadaan ini, cek kembali apakah metodenya sudah tepat."
+      status: "Sesuai",
+      advice: "E-purchasing dipilih karena paket ditandai tersedia di katalog."
     };
   }
 
   return {
     status: "Sesuai",
-    advice: "Metode yang dipilih masih masuk akal untuk simulasi ini. Lanjutkan dengan pengecekan jadwal dan kesiapan dokumen."
+    advice: "Metode yang dipilih masih sesuai dengan rule simulasi ini."
   };
 }
 
@@ -408,7 +427,7 @@ function evaluateDuration(method, duration) {
   return {
     type: "valid",
     text: `Durasi ${method} masih dalam rentang kewajaran simulasi.`
-  };
+    };
 }
 
 function setStatus(type, html) {
@@ -596,10 +615,9 @@ function resetForm() {
   el.paguPaket.value = "150.000.000";
   el.tersediaKatalog.value = "tidak";
   populateMethodOptions();
-  el.metodePemilihan.value = "Pengadaan Langsung / ePL";
-  updateMethodDefaults();
   el.durasiPekerjaan.value = "12";
   el.mulaiPelaksanaan.value = "2026-04-01";
+  el.whyMethodBox.style.display = "none";
   renderSimulation();
 }
 
@@ -611,11 +629,22 @@ function toggleSidebar() {
   el.sidebar.classList.toggle("collapsed");
 }
 
-el.paguPaket.addEventListener("input", formatPaguInput);
+function toggleWhyMethod() {
+  const isHidden = el.whyMethodBox.style.display === "none" || !el.whyMethodBox.style.display;
+  el.whyMethodBox.style.display = isHidden ? "block" : "none";
+  el.whyMethodText.innerHTML = methodExplanationCache || "-";
+}
+
+el.paguPaket.addEventListener("input", () => {
+  formatPaguInput();
+  populateMethodOptions();
+});
+
 el.jenisPengadaan.addEventListener("change", populateMethodOptions);
 el.tersediaKatalog.addEventListener("change", populateMethodOptions);
 el.metodePemilihan.addEventListener("change", updateMethodDefaults);
 
+el.btnWhyMethod.addEventListener("click", toggleWhyMethod);
 el.btnSimulasikan.addEventListener("click", renderSimulation);
 el.btnReset.addEventListener("click", resetForm);
 el.btnExportPdf.addEventListener("click", exportPdf);
