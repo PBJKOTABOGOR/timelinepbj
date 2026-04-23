@@ -162,12 +162,12 @@ function buildHeader(tahunAnggaran) {
 
   const prevHeader = document.createElement("div");
   prevHeader.className = "timeline-super-cell timeline-super-prev";
-  prevHeader.textContent = "TAHUN ANGGARAN SEBELUMNYA (N-1)";
+  prevHeader.textContent = "TAHUN ANGGARAN SEBELUMNYA";
   el.timelineSuperHeader.appendChild(prevHeader);
 
   const currentHeader = document.createElement("div");
   currentHeader.className = "timeline-super-cell timeline-super-current";
-  currentHeader.textContent = "TAHUN ANGGARAN BERKENAAN (N)";
+  currentHeader.textContent = "TAHUN ANGGARAN BERKENAAN";
   el.timelineSuperHeader.appendChild(currentHeader);
 
   const spacer = document.createElement("div");
