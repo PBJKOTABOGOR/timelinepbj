@@ -138,6 +138,10 @@ function isOverlap(rangeStart, rangeEnd, monthStart, monthEnd) {
 function buildHeader(year) {
   el.timelineHeader.innerHTML = "";
 
+  const spacer = document.createElement("div");
+  spacer.className = "timeline-spacer";
+  el.timelineHeader.appendChild(spacer);
+
   MONTH_NAMES.forEach((month) => {
     const div = document.createElement("div");
     div.className = "timeline-month";
