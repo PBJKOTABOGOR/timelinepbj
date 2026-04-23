@@ -427,7 +427,7 @@ function evaluateDuration(method, duration) {
   return {
     type: "valid",
     text: `Durasi ${method} masih dalam rentang kewajaran simulasi.`
-    };
+  };
 }
 
 function setStatus(type, html) {
