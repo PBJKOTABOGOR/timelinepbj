@@ -162,14 +162,24 @@
                     </select>
                   </div>
 
-                  <div class="field">
-                    <label for="metodePemilihan">Metode Pemilihan</label>
-                    <select id="metodePemilihan" class="select"></select>
-                    <small id="helpMetode">
-                      Metode akan disesuaikan dengan jenis pengadaan, pagu, dan ketersediaan katalog.
-                    </small>
-                  </div>
-                </div>
+<div class="field">
+  <label for="metodePemilihan">Metode Pemilihan</label>
+  <select id="metodePemilihan" class="select"></select>
+  <small id="helpMetode">
+    Metode akan disesuaikan dengan jenis pengadaan, pagu, dan ketersediaan katalog.
+  </small>
+
+  <div class="method-help-actions">
+    <button type="button" class="btn btn-light btn-small" id="btnWhyMethod">
+      Kenapa metode ini tidak tampil?
+    </button>
+  </div>
+
+  <div class="why-method-box" id="whyMethodBox" style="display:none;">
+    <div class="why-method-title">Penjelasan Sistem</div>
+    <div class="why-method-text" id="whyMethodText">-</div>
+  </div>
+</div>
 
                 <div class="inline-grid">
                   <div class="field">
