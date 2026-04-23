@@ -27,8 +27,6 @@ const TIMELINE_MONTHS = [
 ];
 
 const el = {
-  sidebar: document.getElementById("sidebar"),
-  sidebarToggle: document.getElementById("sidebarToggle"),
 
   tahunAnggaran: document.getElementById("tahunAnggaran"),
   jenisKontrak: document.getElementById("jenisKontrak"),
@@ -625,9 +623,6 @@ function exportPdf() {
   window.print();
 }
 
-function toggleSidebar() {
-  el.sidebar.classList.toggle("collapsed");
-}
 
 function toggleWhyMethod() {
   const isHidden = el.whyMethodBox.style.display === "none" || !el.whyMethodBox.style.display;
@@ -649,7 +644,6 @@ el.btnSimulasikan.addEventListener("click", renderSimulation);
 el.btnReset.addEventListener("click", resetForm);
 el.btnExportPdf.addEventListener("click", exportPdf);
 el.btnExportPdfTop.addEventListener("click", exportPdf);
-el.sidebarToggle.addEventListener("click", toggleSidebar);
 
 function init() {
   formatPaguInput();
