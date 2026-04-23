@@ -939,3 +939,37 @@ body{
     grid-template-columns:repeat(16, 1fr);
   }
 }
+
+
+.app.no-sidebar{
+  display:block;
+  min-height:100vh;
+}
+
+.app.no-sidebar .main{
+  width:100%;
+  max-width:none;
+}
+
+.app.no-sidebar .topbar{
+  position:sticky;
+  top:0;
+  left:0;
+  width:100%;
+}
+
+.app.no-sidebar .content{
+  width:100%;
+  max-width:none;
+  padding:24px;
+}
+
+.app.no-sidebar .grid{
+  grid-template-columns:420px 1fr;
+}
+
+@media (max-width:1200px){
+  .app.no-sidebar .grid{
+    grid-template-columns:1fr;
+  }
+}
