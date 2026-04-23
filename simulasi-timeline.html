@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIPPBJ - Simulasi Timeline Pengadaan</title>
+
+  <style>
+    :root{
+      --bg:#f3f7fb;
+      --card:#ffffff;
+      --line:#dbe5f0;
+      --text:#10233b;
+      --muted:#64748b;
+      --primary:#0f3d91;
+      --primary-2:#1d4ed8;
+      --success:#15803d;
+      --warning:#b45309;
+      --danger:#b91c1c;
+      --soft-primary:#e8f0ff;
+      --soft-success:#eaf8ee;
+      --soft-warning:#fff7e8;
+      --soft-danger:#fdecec;
+      --shadow:0 12px 28px rgba(15,23,42,0.08);
+      --radius:18px;
+    }
+
+    *{
+      box-sizing:border-box;
+    }
+
+    body{
+      margin:0;
+      font-family:Arial, Helvetica, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+
+    .page{
+      width:100%;
+      max-width:1400px;
+      margin:0 auto;
+      padding:24px;
+    }
+
+    .hero{
+      background:linear-gradient(135deg, #0f3d91 0%, #1e56c5 100%);
+      color:#fff;
+      border-radius:24px;
+      padding:28px;
+      box-shadow:var(--shadow);
+      margin-bottom:22px;
+    }
+
+    .hero h1{
+      margin:0 0 10px 0;
+      font-size:30px;
+      line-height:1.2;
+    }
+
+    .hero p{
+      margin:0;
+      font-size:14px;
+      line-height:1.7;
+      color:rgba(255,255,255,0.92);
+      max-width:920px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:420px 1fr;
+      gap:22px;
+      align-items:start;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+
+    .card-header{
+      padding:18px 20px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+
+    .card-title{
+      margin:0;
+      font-size:18px;
+      font-weight:700;
+      color:var(--text);
+    }
+
+    .card-subtitle{
+      margin:4px 0 0 0;
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.5;
+    }
+
+    .card-body{
+      padding:20px;
+    }
+
+    .form-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:14px;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .field label{
+      font-size:13px;
+      font-weight:700;
+      color:var(--text);
+    }
+
+    .field small{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.4;
+    }
+
+    .input,
+    .select{
+      width:100%;
+      height:46px;
+      border:1px solid #cfd9e6;
+      border-radius:12px;
+      padding:0 14px;
+      font-size:14px;
+      color:var(--text);
+      background:#fff;
+      outline:none;
+      transition:all 0.2s ease;
+    }
+
+    .input:focus,
+    .select:focus{
+      border-color:var(--primary-2);
+      box-shadow:0 0 0 4px rgba(29,78,216,0.10);
+    }
+
+    .inline-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+
+    .actions{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:8px;
+    }
+
+    .btn{
+      appearance:none;
+      border:none;
+      border-radius:12px;
+      height:46px;
+      padding:0 18px;
+      font-size:14px;
+      font-weight:700;
+      cursor:pointer;
+      transition:all 0.2s ease;
+    }
+
+    .btn-primary{
+      background:var(--primary);
+      color:#fff;
+    }
+
+    .btn-primary:hover{
+      background:#0d347a;
+    }
+
+    .btn-light{
+      background:#eef3f9;
+      color:var(--text);
+      border:1px solid var(--line);
+    }
+
+    .btn-light:hover{
+      background:#e4ebf4;
+    }
+
+    .right-panel{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:22px;
+    }
+
+    .summary-grid{
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0, 1fr));
+      gap:14px;
+    }
+
+    .summary-box{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:16px;
+      background:#fff;
+    }
+
+    .summary-box .label{
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:8px;
+      font-weight:700;
+      text-transform:uppercase;
+      letter-spacing:0.3px;
+    }
+
+    .summary-box .value{
+      font-size:18px;
+      font-weight:700;
+      line-height:1.4;
+      color:var(--text);
+    }
+
+    .summary-box .sub{
+      margin-top:6px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.5;
+    }
+
+    .status-box{
+      border-radius:16px;
+      padding:16px 18px;
+      font-size:14px;
+      line-height:1.7;
+      font-weight:600;
+      border:1px solid transparent;
+    }
+
+    .status-valid{
+      background:var(--soft-success);
+      color:var(--success);
+      border-color:#b9e3c4;
+    }
+
+    .status-warning{
+      background:var(--soft-warning);
+      color:var(--warning);
+      border-color:#f0d7a6;
+    }
+
+    .status-invalid{
+      background:var(--soft-danger);
+      color:var(--danger);
+      border-color:#f2bebe;
+    }
+
+    .timeline-wrapper{
+      overflow:auto;
+      padding-bottom:4px;
+    }
+
+    .timeline-header{
+      display:grid;
+      grid-template-columns:repeat(12, minmax(90px, 1fr));
+      gap:6px;
+      min-width:1100px;
+      margin-bottom:10px;
+    }
+
+    .timeline-month{
+      background:#f8fbff;
+      border:1px solid var(--line);
+      border-radius:10px;
+      text-align:center;
+      padding:10px 6px;
+      font-size:12px;
+      font-weight:700;
+      color:var(--muted);
+    }
+
+    .timeline-row{
+      display:grid;
+      grid-template-columns:180px 1fr;
+      gap:14px;
+      align-items:center;
+      margin-bottom:12px;
+      min-width:1280px;
+    }
+
+    .timeline-label{
+      font-size:13px;
+      font-weight:700;
+      color:var(--text);
+    }
+
+    .timeline-track{
+      display:grid;
+      grid-template-columns:repeat(12, minmax(90px, 1fr));
+      gap:6px;
+    }
+
+    .timeline-cell{
+      height:42px;
+      border-radius:10px;
+      border:1px solid var(--line);
+      background:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:12px;
+      font-weight:700;
+      color:#334155;
+    }
+
+    .fill-persiapan{
+      background:#dbeafe;
+      border-color:#93c5fd;
+      color:#1d4ed8;
+    }
+
+    .fill-pemilihan{
+      background:#fee2e2;
+      border-color:#fca5a5;
+      color:#b91c1c;
+    }
+
+    .fill-pelaksanaan{
+      background:#fef3c7;
+      border-color:#fcd34d;
+      color:#a16207;
+    }
+
+    .fill-akhir{
+      background:#dcfce7;
+      border-color:#86efac;
+      color:#15803d;
+    }
+
+    .legend{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:14px;
+    }
+
+    .legend-item{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:13px;
+      color:var(--muted);
+      font-weight:600;
+    }
+
+    .legend-dot{
+      width:16px;
+      height:16px;
+      border-radius:6px;
+      border:1px solid transparent;
+    }
+
+    .dot-persiapan{
+      background:#dbeafe;
+      border-color:#93c5fd;
+    }
+
+    .dot-pemilihan{
+      background:#fee2e2;
+      border-color:#fca5a5;
+    }
+
+    .dot-pelaksanaan{
+      background:#fef3c7;
+      border-color:#fcd34d;
+    }
+
+    .dot-akhir{
+      background:#dcfce7;
+      border-color:#86efac;
+    }
+
+    .detail-table{
+      width:100%;
+      border-collapse:collapse;
+    }
+
+    .detail-table th,
+    .detail-table td{
+      padding:12px 14px;
+      border-bottom:1px solid var(--line);
+      text-align:left;
+      font-size:14px;
+      vertical-align:top;
+    }
+
+    .detail-table th{
+      width:240px;
+      color:var(--muted);
+      font-weight:700;
+      background:#fbfdff;
+    }
+
+    .info-note{
+      margin-top:16px;
+      padding:14px 16px;
+      border-radius:14px;
+      background:#f8fbff;
+      border:1px solid var(--line);
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.7;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      min-height:28px;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:700;
+      background:var(--soft-primary);
+      color:var(--primary);
+      border:1px solid #c7dafc;
+    }
+
+    @media (max-width:1100px){
+      .grid{
+        grid-template-columns:1fr;
+      }
+
+      .summary-grid{
+        grid-template-columns:1fr;
+      }
+    }
+
+    @media (max-width:640px){
+      .page{
+        padding:16px;
+      }
+
+      .hero{
+        padding:22px 18px;
+      }
+
+      .hero h1{
+        font-size:24px;
+      }
+
+      .inline-grid{
+        grid-template-columns:1fr;
+      }
+
+      .actions{
+        flex-direction:column;
+      }
+
+      .btn{
+        width:100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <h1>Simulasi Timeline Proses Pengadaan</h1>
+      <p>
+        Menu ini membantu menyusun jadwal ideal proses pengadaan berdasarkan metode pemilihan,
+        durasi pekerjaan, target mulai pelaksanaan, dan jenis kontrak. Hasil simulasi akan
+        menampilkan jadwal persiapan, pemilihan, pelaksanaan, serta validasi apakah jadwal
+        masih aman dalam tahun anggaran berjalan.
+      </p>
+    </section>
+
+    <div class="grid">
+      <!-- PANEL INPUT -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Form Simulasi</h2>
+            <p class="card-subtitle">Isi parameter jadwal, lalu klik tombol Simulasikan.</p>
+          </div>
+          <span class="badge">Menu Simulasi</span>
+        </div>
+
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="inline-grid">
+              <div class="field">
+                <label for="tahunAnggaran">Tahun Anggaran</label>
+                <input
+                  type="number"
+                  id="tahunAnggaran"
+                  class="input"
+                  value="2026"
+                  min="2020"
+                  max="2100"
+                >
+              </div>
+
+              <div class="field">
+                <label for="jenisKontrak">Jenis Kontrak</label>
+                <select id="jenisKontrak" class="select">
+                  <option value="single">Single Year</option>
+                  <option value="multi">Multi Year</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="jenisPengadaan">Jenis Pengadaan</label>
+              <select id="jenisPengadaan" class="select">
+                <option value="Barang">Barang</option>
+                <option value="Pekerjaan Konstruksi">Pekerjaan Konstruksi</option>
+                <option value="Jasa Konsultansi">Jasa Konsultansi</option>
+                <option value="Jasa Lainnya">Jasa Lainnya</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="metodePemilihan">Metode Pemilihan</label>
+              <select id="metodePemilihan" class="select">
+                <option value="Tender">Tender</option>
+                <option value="Seleksi">Seleksi</option>
+                <option value="Pengadaan Langsung / ePL">Pengadaan Langsung / ePL</option>
+                <option value="Penunjukan Langsung">Penunjukan Langsung</option>
+                <option value="e-Purchasing">e-Purchasing</option>
+              </select>
+              <small>
+                Durasi pemilihan akan otomatis menyesuaikan metode, tetapi tetap bisa diubah manual.
+              </small>
+            </div>
+
+            <div class="inline-grid">
+              <div class="field">
+                <label for="durasiPemilihan">Durasi Pemilihan (hari)</label>
+                <input
+                  type="number"
+                  id="durasiPemilihan"
+                  class="input"
+                  value="7"
+                  min="1"
+                >
+              </div>
+
+              <div class="field">
+                <label for="bufferPersiapan">Buffer Persiapan (hari)</label>
+                <input
+                  type="number"
+                  id="bufferPersiapan"
+                  class="input"
+                  value="7"
+                  min="0"
+                >
+              </div>
+            </div>
+
+            <div class="inline-grid">
+              <div class="field">
+                <label for="durasiPekerjaan">Durasi Pekerjaan (bulan)</label>
+                <select id="durasiPekerjaan" class="select">
+                  <option value="1">1 Bulan</option>
+                  <option value="2">2 Bulan</option>
+                  <option value="3">3 Bulan</option>
+                  <option value="4">4 Bulan</option>
+                  <option value="5">5 Bulan</option>
+                  <option value="6">6 Bulan</option>
+                  <option value="7">7 Bulan</option>
+                  <option value="8">8 Bulan</option>
+                  <option value="9">9 Bulan</option>
+                  <option value="10">10 Bulan</option>
+                  <option value="11">11 Bulan</option>
+                  <option value="12" selected>12 Bulan</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="mulaiPelaksanaan">Target Mulai Pelaksanaan</label>
+                <input
+                  type="date"
+                  id="mulaiPelaksanaan"
+                  class="input"
+                  value="2026-04-01"
+                >
+              </div>
+            </div>
+
+            <div class="actions">
+              <button class="btn btn-primary" id="btnSimulasikan">Simulasikan</button>
+              <button class="btn btn-light" id="btnReset">Reset</button>
+            </div>
+
+            <div class="info-note">
+              Simulasi ini menggunakan logika sederhana: <strong>tanggal mulai pelaksanaan</strong>
+              dijadikan acuan utama, lalu sistem menghitung mundur untuk menentukan
+              <strong>mulai pemilihan</strong> dan <strong>mulai persiapan</strong>.
+              Hasil validasi akan memberi tahu apakah jadwal masih aman untuk
+              <strong>single year</strong> atau sudah melewati tahun anggaran.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL HASIL -->
+      <div class="right-panel">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Ringkasan Hasil Simulasi</h2>
+              <p class="card-subtitle">Hasil perhitungan jadwal otomatis berdasarkan input.</p>
+            </div>
+            <span class="badge" id="badgeMetode">-</span>
+          </div>
+
+          <div class="card-body">
+            <div class="summary-grid">
+              <div class="summary-box">
+                <div class="label">Mulai Persiapan</div>
+                <div class="value" id="outMulaiPersiapan">-</div>
+                <div class="sub">Tahap persiapan awal sebelum pemilihan dimulai.</div>
+              </div>
+
+              <div class="summary-box">
+                <div class="label">Mulai Pemilihan</div>
+                <div class="value" id="outMulaiPemilihan">-</div>
+                <div class="sub">Awal proses pemilihan penyedia.</div>
+              </div>
+
+              <div class="summary-box">
+                <div class="label">Selesai Pemilihan</div>
+                <div class="value" id="outSelesaiPemilihan">-</div>
+                <div class="sub">Perkiraan akhir proses pemilihan.</div>
+              </div>
+
+              <div class="summary-box">
+                <div class="label">Mulai Kontrak</div>
+                <div class="value" id="outMulaiKontrak">-</div>
+                <div class="sub">Umumnya sama dengan mulai pelaksanaan.</div>
+              </div>
+
+              <div class="summary-box">
+                <div class="label">Selesai Pelaksanaan</div>
+                <div class="value" id="outSelesaiPelaksanaan">-</div>
+                <div class="sub">Perkiraan akhir masa pekerjaan/kontrak.</div>
+              </div>
+
+              <div class="summary-box">
+                <div class="label">Durasi Total</div>
+                <div class="value" id="outDurasiTotal">-</div>
+                <div class="sub">Akumulasi persiapan, pemilihan, dan pelaksanaan.</div>
+              </div>
+            </div>
+
+            <div style="margin-top:16px;">
+              <div id="statusBox" class="status-box status-warning">
+                Silakan isi parameter simulasi, lalu klik tombol <strong>Simulasikan</strong>.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Visual Timeline Tahunan</h2>
+              <p class="card-subtitle">Visual sederhana per bulan untuk memudahkan membaca jadwal.</p>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="timeline-wrapper">
+              <div class="timeline-header" id="timelineHeader"></div>
+
+              <div class="timeline-row">
+                <div class="timeline-label">Persiapan</div>
+                <div class="timeline-track" id="rowPersiapan"></div>
+              </div>
+
+              <div class="timeline-row">
+                <div class="timeline-label">Pemilihan</div>
+                <div class="timeline-track" id="rowPemilihan"></div>
+              </div>
+
+              <div class="timeline-row">
+                <div class="timeline-label">Pelaksanaan</div>
+                <div class="timeline-track" id="rowPelaksanaan"></div>
+              </div>
+
+              <div class="timeline-row">
+                <div class="timeline-label">Akhir / Buffer</div>
+                <div class="timeline-track" id="rowAkhir"></div>
+              </div>
+            </div>
+
+            <div class="legend">
+              <div class="legend-item">
+                <span class="legend-dot dot-persiapan"></span>
+                <span>Persiapan</span>
+              </div>
+
+              <div class="legend-item">
+                <span class="legend-dot dot-pemilihan"></span>
+                <span>Pemilihan</span>
+              </div>
+
+              <div class="legend-item">
+                <span class="legend-dot dot-pelaksanaan"></span>
+                <span>Pelaksanaan</span>
+              </div>
+
+              <div class="legend-item">
+                <span class="legend-dot dot-akhir"></span>
+                <span>Buffer / akhir tahun</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Detail Perhitungan</h2>
+              <p class="card-subtitle">Rincian input dan hasil validasi jadwal.</p>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <table class="detail-table">
+              <tbody>
+                <tr>
+                  <th>Tahun Anggaran</th>
+                  <td id="detailTahun">-</td>
+                </tr>
+                <tr>
+                  <th>Jenis Pengadaan</th>
+                  <td id="detailJenisPengadaan">-</td>
+                </tr>
+                <tr>
+                  <th>Metode Pemilihan</th>
+                  <td id="detailMetode">-</td>
+                </tr>
+                <tr>
+                  <th>Jenis Kontrak</th>
+                  <td id="detailJenisKontrak">-</td>
+                </tr>
+                <tr>
+                  <th>Durasi Pemilihan</th>
+                  <td id="detailDurasiPemilihan">-</td>
+                </tr>
+                <tr>
+                  <th>Durasi Pekerjaan</th>
+                  <td id="detailDurasiPekerjaan">-</td>
+                </tr>
+                <tr>
+                  <th>Mulai Pelaksanaan</th>
+                  <td id="detailMulaiPelaksanaan">-</td>
+                </tr>
+                <tr>
+                  <th>Kesimpulan</th>
+                  <td id="detailKesimpulan">-</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="info-note" id="catatanTambahan">
+              Belum ada hasil simulasi.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const METHOD_DEFAULTS = {
+      'Tender': {
+        duration: 30,
+        prep: 14
+      },
+      'Seleksi': {
+        duration: 30,
+        prep: 14
+      },
+      'Pengadaan Langsung / ePL': {
+        duration: 7,
+        prep: 7
+      },
+      'Penunjukan Langsung': {
+        duration: 7,
+        prep: 7
+      },
+      'e-Purchasing': {
+        duration: 3,
+        prep: 3
+      }
+    };
+
+    const MONTH_NAMES = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+    ];
+
+    const el = {
+      tahunAnggaran: document.getElementById('tahunAnggaran'),
+      jenisKontrak: document.getElementById('jenisKontrak'),
+      jenisPengadaan: document.getElementById('jenisPengadaan'),
+      metodePemilihan: document.getElementById('metodePemilihan'),
+      durasiPemilihan: document.getElementById('durasiPemilihan'),
+      bufferPersiapan: document.getElementById('bufferPersiapan'),
+      durasiPekerjaan: document.getElementById('durasiPekerjaan'),
+      mulaiPelaksanaan: document.getElementById('mulaiPelaksanaan'),
+      btnSimulasikan: document.getElementById('btnSimulasikan'),
+      btnReset: document.getElementById('btnReset'),
+
+      badgeMetode: document.getElementById('badgeMetode'),
+
+      outMulaiPersiapan: document.getElementById('outMulaiPersiapan'),
+      outMulaiPemilihan: document.getElementById('outMulaiPemilihan'),
+      outSelesaiPemilihan: document.getElementById('outSelesaiPemilihan'),
+      outMulaiKontrak: document.getElementById('outMulaiKontrak'),
+      outSelesaiPelaksanaan: document.getElementById('outSelesaiPelaksanaan'),
+      outDurasiTotal: document.getElementById('outDurasiTotal'),
+
+      statusBox: document.getElementById('statusBox'),
+
+      timelineHeader: document.getElementById('timelineHeader'),
+      rowPersiapan: document.getElementById('rowPersiapan'),
+      rowPemilihan: document.getElementById('rowPemilihan'),
+      rowPelaksanaan: document.getElementById('rowPelaksanaan'),
+      rowAkhir: document.getElementById('rowAkhir'),
+
+      detailTahun: document.getElementById('detailTahun'),
+      detailJenisPengadaan: document.getElementById('detailJenisPengadaan'),
+      detailMetode: document.getElementById('detailMetode'),
+      detailJenisKontrak: document.getElementById('detailJenisKontrak'),
+      detailDurasiPemilihan: document.getElementById('detailDurasiPemilihan'),
+      detailDurasiPekerjaan: document.getElementById('detailDurasiPekerjaan'),
+      detailMulaiPelaksanaan: document.getElementById('detailMulaiPelaksanaan'),
+      detailKesimpulan: document.getElementById('detailKesimpulan'),
+      catatanTambahan: document.getElementById('catatanTambahan')
+    };
+
+    function pad(num){
+      return String(num).padStart(2, '0');
+    }
+
+    function parseLocalDate(dateString){
+      if (!dateString) return null;
+      const parts = dateString.split('-');
+      if (parts.length !== 3) return null;
+      return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    }
+
+    function formatDateID(date){
+      if (!(date instanceof Date) || isNaN(date)) return '-';
+
+      const day = date.getDate();
+      const monthNames = [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+      ];
+      const month = monthNames[date.getMonth()];
+      const year = date.getFullYear();
+
+      return `${day} ${month} ${year}`;
+    }
+
+    function addDays(date, days){
+      const d = new Date(date);
+      d.setDate(d.getDate() + days);
+      return d;
+    }
+
+    function addMonths(date, months){
+      const d = new Date(date);
+      const originalDate = d.getDate();
+      d.setMonth(d.getMonth() + months);
+
+      if (d.getDate() < originalDate) {
+        d.setDate(0);
+      }
+
+      return d;
+    }
+
+    function diffDays(start, end){
+      const ms = end.getTime() - start.getTime();
+      return Math.round(ms / (1000 * 60 * 60 * 24));
+    }
+
+    function getMonthRange(year, monthIndex){
+      const start = new Date(year, monthIndex, 1);
+      const end = new Date(year, monthIndex + 1, 0);
+      return { start, end };
+    }
+
+    function isOverlap(rangeStart, rangeEnd, monthStart, monthEnd){
+      return rangeStart <= monthEnd && rangeEnd >= monthStart;
+    }
+
+    function buildHeader(year){
+      el.timelineHeader.innerHTML = '';
+
+      MONTH_NAMES.forEach((month) => {
+        const div = document.createElement('div');
+        div.className = 'timeline-month';
+        div.textContent = `${month} ${year}`;
+        el.timelineHeader.appendChild(div);
+      });
+    }
+
+    function buildEmptyTrack(container){
+      container.innerHTML = '';
+      for (let i = 0; i < 12; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'timeline-cell';
+        cell.textContent = '';
+        container.appendChild(cell);
+      }
+    }
+
+    function fillTrackByRange(container, year, startDate, endDate, fillClass, label){
+      buildEmptyTrack(container);
+
+      for (let i = 0; i < 12; i++) {
+        const monthRange = getMonthRange(year, i);
+        const cell = container.children[i];
+
+        if (isOverlap(startDate, endDate, monthRange.start, monthRange.end)) {
+          cell.classList.add(fillClass);
+          cell.textContent = label || '';
+        }
+      }
+    }
+
+    function buildTimeline(year, ranges){
+      buildHeader(year);
+
+      fillTrackByRange(
+        el.rowPersiapan,
+        year,
+        ranges.persiapan.start,
+        ranges.persiapan.end,
+        'fill-persiapan',
+        'Persiapan'
+      );
+
+      fillTrackByRange(
+        el.rowPemilihan,
+        year,
+        ranges.pemilihan.start,
+        ranges.pemilihan.end,
+        'fill-pemilihan',
+        'Pilih'
+      );
+
+      fillTrackByRange(
+        el.rowPelaksanaan,
+        year,
+        ranges.pelaksanaan.start,
+        ranges.pelaksanaan.end,
+        'fill-pelaksanaan',
+        'Kerja'
+      );
+
+      fillTrackByRange(
+        el.rowAkhir,
+        year,
+        ranges.akhir.start,
+        ranges.akhir.end,
+        'fill-akhir',
+        'Buffer'
+      );
+    }
+
+    function setMethodDefaults(){
+      const method = el.metodePemilihan.value;
+      const defaults = METHOD_DEFAULTS[method];
+
+      if (!defaults) return;
+
+      el.durasiPemilihan.value = defaults.duration;
+      el.bufferPersiapan.value = defaults.prep;
+    }
+
+    function setStatus(type, html){
+      el.statusBox.className = 'status-box';
+
+      if (type === 'valid') {
+        el.statusBox.classList.add('status-valid');
+      } else if (type === 'invalid') {
+        el.statusBox.classList.add('status-invalid');
+      } else {
+        el.statusBox.classList.add('status-warning');
+      }
+
+      el.statusBox.innerHTML = html;
+    }
+
+    function renderSimulation(){
+      const tahun = Number(el.tahunAnggaran.value || 0);
+      const jenisKontrak = el.jenisKontrak.value;
+      const jenisPengadaan = el.jenisPengadaan.value;
+      const metode = el.metodePemilihan.value;
+      const durasiPemilihanHari = Number(el.durasiPemilihan.value || 0);
+      const bufferHari = Number(el.bufferPersiapan.value || 0);
+      const durasiPekerjaanBulan = Number(el.durasiPekerjaan.value || 0);
+      const mulaiPelaksanaan = parseLocalDate(el.mulaiPelaksanaan.value);
+
+      if (!tahun || !mulaiPelaksanaan || durasiPemilihanHari < 1 || durasiPekerjaanBulan < 1 || bufferHari < 0) {
+        setStatus(
+          'warning',
+          'Input belum lengkap atau belum valid. Pastikan seluruh field sudah terisi dengan benar.'
+        );
+        return;
+      }
+
+      const mulaiKontrak = new Date(mulaiPelaksanaan);
+      const selesaiPelaksanaan = addDays(addMonths(mulaiPelaksanaan, durasiPekerjaanBulan), -1);
+      const selesaiPemilihan = addDays(mulaiPelaksanaan, -1);
+      const mulaiPemilihan = addDays(selesaiPemilihan, -(durasiPemilihanHari - 1));
+      const mulaiPersiapan = addDays(mulaiPemilihan, -bufferHari);
+
+      const akhirTahunAnggaran = new Date(tahun, 11, 31);
+
+      const totalDurasiHari = diffDays(mulaiPersiapan, selesaiPelaksanaan) + 1;
+
+      const sisaAkhirTahunStart = selesaiPelaksanaan <= akhirTahunAnggaran
+        ? addDays(selesaiPelaksanaan, 1)
+        : new Date(tahun, 11, 31);
+
+      const sisaAkhirTahunEnd = akhirTahunAnggaran;
+
+      let statusType = 'valid';
+      let kesimpulan = '';
+      let catatan = '';
+
+      if (jenisKontrak === 'single') {
+        if (selesaiPelaksanaan > akhirTahunAnggaran) {
+          statusType = 'invalid';
+          kesimpulan = 'Tidak valid untuk Single Year';
+          catatan = `
+            Jadwal ini melewati batas tahun anggaran <strong>${tahun}</strong>.
+            Jika tetap ingin dilaksanakan dengan durasi tersebut, maka perlu
+            mempertimbangkan skema <strong>multi year</strong> atau memajukan
+            target mulai pelaksanaan.
+          `;
+        } else {
+          const sisaHari = diffDays(selesaiPelaksanaan, akhirTahunAnggaran);
+
+          if (sisaHari <= 30) {
+            statusType = 'warning';
+            kesimpulan = 'Valid, namun mepet akhir tahun';
+            catatan = `
+              Jadwal masih berada dalam tahun anggaran <strong>${tahun}</strong>,
+              tetapi waktu penyelesaian cukup mepet dengan akhir tahun.
+              Disarankan melakukan percepatan pada tahap persiapan/pemilihan
+              agar lebih aman.
+            `;
+          } else {
+            statusType = 'valid';
+            kesimpulan = 'Valid untuk Single Year';
+            catatan = `
+              Jadwal masih aman dalam tahun anggaran <strong>${tahun}</strong>.
+              Pelaksanaan diperkirakan selesai sebelum 31 Desember ${tahun}.
+            `;
+          }
+        }
+      } else {
+        statusType = 'valid';
+        kesimpulan = 'Valid untuk Multi Year';
+        catatan = `
+          Jadwal dapat dilaksanakan sebagai <strong>multi year</strong>,
+          dengan catatan tetap menyesuaikan ketentuan penganggaran,
+          kontrak, dan persetujuan yang berlaku.
+        `;
+      }
+
+      el.badgeMetode.textContent = metode;
+
+      el.outMulaiPersiapan.textContent = formatDateID(mulaiPersiapan);
+      el.outMulaiPemilihan.textContent = formatDateID(mulaiPemilihan);
+      el.outSelesaiPemilihan.textContent = formatDateID(selesaiPemilihan);
+      el.outMulaiKontrak.textContent = formatDateID(mulaiKontrak);
+      el.outSelesaiPelaksanaan.textContent = formatDateID(selesaiPelaksanaan);
+      el.outDurasiTotal.textContent = `${totalDurasiHari.toLocaleString('id-ID')} Hari`;
+
+      if (statusType === 'valid') {
+        setStatus(
+          'valid',
+          `<strong>${kesimpulan}</strong><br>${catatan}`
+        );
+      } else if (statusType === 'invalid') {
+        setStatus(
+          'invalid',
+          `<strong>${kesimpulan}</strong><br>${catatan}`
+        );
+      } else {
+        setStatus(
+          'warning',
+          `<strong>${kesimpulan}</strong><br>${catatan}`
+        );
+      }
+
+      el.detailTahun.textContent = tahun;
+      el.detailJenisPengadaan.textContent = jenisPengadaan;
+      el.detailMetode.textContent = metode;
+      el.detailJenisKontrak.textContent = jenisKontrak === 'single' ? 'Single Year' : 'Multi Year';
+      el.detailDurasiPemilihan.textContent = `${durasiPemilihanHari} Hari`;
+      el.detailDurasiPekerjaan.textContent = `${durasiPekerjaanBulan} Bulan`;
+      el.detailMulaiPelaksanaan.textContent = formatDateID(mulaiPelaksanaan);
+      el.detailKesimpulan.innerHTML = `<strong>${kesimpulan}</strong>`;
+      el.catatanTambahan.innerHTML = catatan;
+
+      const ranges = {
+        persiapan: {
+          start: mulaiPersiapan,
+          end: addDays(mulaiPemilihan, -1)
+        },
+        pemilihan: {
+          start: mulaiPemilihan,
+          end: selesaiPemilihan
+        },
+        pelaksanaan: {
+          start: mulaiPelaksanaan,
+          end: selesaiPelaksanaan
+        },
+        akhir: {
+          start: sisaAkhirTahunStart,
+          end: sisaAkhirTahunEnd
+        }
+      };
+
+      buildTimeline(tahun, ranges);
+    }
+
+    function resetForm(){
+      el.tahunAnggaran.value = '2026';
+      el.jenisKontrak.value = 'single';
+      el.jenisPengadaan.value = 'Barang';
+      el.metodePemilihan.value = 'Pengadaan Langsung / ePL';
+      el.durasiPemilihan.value = '7';
+      el.bufferPersiapan.value = '7';
+      el.durasiPekerjaan.value = '12';
+      el.mulaiPelaksanaan.value = '2026-04-01';
+
+      renderSimulation();
+    }
+
+    el.metodePemilihan.addEventListener('change', () => {
+      setMethodDefaults();
+    });
+
+    el.btnSimulasikan.addEventListener('click', () => {
+      renderSimulation();
+    });
+
+    el.btnReset.addEventListener('click', () => {
+      resetForm();
+    });
+
+    function init(){
+      el.metodePemilihan.value = 'Pengadaan Langsung / ePL';
+      setMethodDefaults();
+      renderSimulation();
+    }
+
+    init();
+  </script>
+</body>
+</html>
