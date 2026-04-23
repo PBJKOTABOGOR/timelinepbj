@@ -72,7 +72,7 @@
         <div class="topbar-title-wrap">
           <h2 class="topbar-title">Simulasi Timeline Proses Pengadaan</h2>
           <p class="topbar-subtitle">
-            Sidebar bisa di-minimize agar area kerja lebih lebar untuk form, tabel, dan timeline.
+            Simulasi sederhana untuk membantu menyusun jadwal pengadaan agar tidak mepet akhir tahun.
           </p>
         </div>
 
@@ -90,10 +90,9 @@
         <section class="hero">
           <h1>Simulasi Timeline Proses Pengadaan</h1>
           <p>
-            Menu ini membantu menyusun jadwal ideal proses pengadaan berdasarkan metode pemilihan,
-            durasi pekerjaan, target mulai pelaksanaan, dan jenis kontrak. Hasil simulasi akan
-            menampilkan jadwal persiapan, pemilihan, pelaksanaan, serta validasi apakah jadwal
-            masih aman dalam tahun anggaran berjalan.
+            User cukup mengisi metode, durasi pekerjaan, target mulai pelaksanaan, dan jenis kontrak.
+            Sistem akan menghitung jadwal persiapan, pemilihan, pelaksanaan, serta memberi saran
+            apakah paket masih aman, mepet, atau sebaiknya sudah disiapkan sejak akhir tahun sebelumnya.
           </p>
         </section>
 
@@ -125,8 +124,8 @@
                   <div class="field">
                     <label for="jenisKontrak">Jenis Kontrak</label>
                     <select id="jenisKontrak" class="select">
-                      <option value="single">Single Year</option>
-                      <option value="multi">Multi Year</option>
+                      <option value="single">Kontrak Tahunan (Single Year)</option>
+                      <option value="multi">Kontrak Jamak (Multi Year)</option>
                     </select>
                   </div>
                 </div>
@@ -151,7 +150,7 @@
                     <option value="e-Purchasing">e-Purchasing</option>
                   </select>
                   <small>
-                    Durasi pemilihan akan otomatis menyesuaikan metode, tetapi tetap bisa diubah manual.
+                    Durasi pemilihan akan otomatis menyesuaikan metode, tapi tetap bisa diubah manual.
                   </small>
                 </div>
 
@@ -273,6 +272,17 @@
                   </div>
                 </div>
 
+                <div class="advice-grid">
+                  <div class="mini-card">
+                    <div class="mini-title">Status Jadwal</div>
+                    <div class="mini-value" id="outStatusJadwal">-</div>
+                  </div>
+                  <div class="mini-card">
+                    <div class="mini-title">Saran Sistem</div>
+                    <div class="mini-text" id="outSaranSistem">-</div>
+                  </div>
+                </div>
+
                 <div class="status-wrap">
                   <div id="statusBox" class="status-box status-warning">
                     Silakan isi parameter simulasi, lalu klik tombol <strong>Simulasikan</strong>.
@@ -284,33 +294,40 @@
             <div class="card">
               <div class="card-header">
                 <div>
-                  <h2 class="card-title">Visual Timeline Tahunan</h2>
-                  <p class="card-subtitle">Visual sederhana per bulan untuk memudahkan membaca jadwal.</p>
+                  <h2 class="card-title">Visual Timeline Sederhana</h2>
+                  <p class="card-subtitle">
+                    Timeline ditampilkan dari akhir tahun sebelumnya sampai akhir tahun anggaran berjalan.
+                  </p>
                 </div>
               </div>
 
               <div class="card-body">
+                <div class="timeline-group-labels">
+                  <div class="group-label group-left" id="groupLeftLabel">Pra-Tahun Anggaran</div>
+                  <div class="group-label group-right" id="groupRightLabel">Tahun Anggaran</div>
+                </div>
+
                 <div class="timeline-wrapper">
                   <div class="timeline-header" id="timelineHeader"></div>
 
                   <div class="timeline-row">
                     <div class="timeline-label">Persiapan</div>
-                    <div class="timeline-track" id="rowPersiapan"></div>
+                    <div class="timeline-track timeline-track-16" id="rowPersiapan"></div>
                   </div>
 
                   <div class="timeline-row">
                     <div class="timeline-label">Pemilihan</div>
-                    <div class="timeline-track" id="rowPemilihan"></div>
+                    <div class="timeline-track timeline-track-16" id="rowPemilihan"></div>
                   </div>
 
                   <div class="timeline-row">
                     <div class="timeline-label">Pelaksanaan</div>
-                    <div class="timeline-track" id="rowPelaksanaan"></div>
+                    <div class="timeline-track timeline-track-16" id="rowPelaksanaan"></div>
                   </div>
 
                   <div class="timeline-row">
                     <div class="timeline-label">Akhir / Buffer</div>
-                    <div class="timeline-track" id="rowAkhir"></div>
+                    <div class="timeline-track timeline-track-16" id="rowAkhir"></div>
                   </div>
                 </div>
 
