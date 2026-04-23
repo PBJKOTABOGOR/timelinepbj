@@ -22,22 +22,22 @@ const METHOD_DEFAULTS = {
 };
 
 const TIMELINE_MONTHS = [
-  { key: "prev-09", label: "Sep", yearOffset: -1, month: 8 },
-  { key: "prev-10", label: "Okt", yearOffset: -1, month: 9 },
-  { key: "prev-11", label: "Nov", yearOffset: -1, month: 10 },
-  { key: "prev-12", label: "Des", yearOffset: -1, month: 11 },
-  { key: "curr-01", label: "Jan", yearOffset: 0, month: 0 },
-  { key: "curr-02", label: "Feb", yearOffset: 0, month: 1 },
-  { key: "curr-03", label: "Mar", yearOffset: 0, month: 2 },
-  { key: "curr-04", label: "Apr", yearOffset: 0, month: 3 },
-  { key: "curr-05", label: "Mei", yearOffset: 0, month: 4 },
-  { key: "curr-06", label: "Jun", yearOffset: 0, month: 5 },
-  { key: "curr-07", label: "Jul", yearOffset: 0, month: 6 },
-  { key: "curr-08", label: "Agu", yearOffset: 0, month: 7 },
-  { key: "curr-09", label: "Sep", yearOffset: 0, month: 8 },
-  { key: "curr-10", label: "Okt", yearOffset: 0, month: 9 },
-  { key: "curr-11", label: "Nov", yearOffset: 0, month: 10 },
-  { key: "curr-12", label: "Des", yearOffset: 0, month: 11 }
+  { label: "September", yearOffset: -1, month: 8 },
+  { label: "Oktober", yearOffset: -1, month: 9 },
+  { label: "November", yearOffset: -1, month: 10 },
+  { label: "Desember", yearOffset: -1, month: 11 },
+  { label: "Januari", yearOffset: 0, month: 0 },
+  { label: "Februari", yearOffset: 0, month: 1 },
+  { label: "Maret", yearOffset: 0, month: 2 },
+  { label: "April", yearOffset: 0, month: 3 },
+  { label: "Mei", yearOffset: 0, month: 4 },
+  { label: "Juni", yearOffset: 0, month: 5 },
+  { label: "Juli", yearOffset: 0, month: 6 },
+  { label: "Agustus", yearOffset: 0, month: 7 },
+  { label: "September", yearOffset: 0, month: 8 },
+  { label: "Oktober", yearOffset: 0, month: 9 },
+  { label: "November", yearOffset: 0, month: 10 },
+  { label: "Desember", yearOffset: 0, month: 11 }
 ];
 
 const el = {
@@ -71,14 +71,12 @@ const el = {
 
   statusBox: document.getElementById("statusBox"),
 
+  timelineSuperHeader: document.getElementById("timelineSuperHeader"),
   timelineHeader: document.getElementById("timelineHeader"),
   rowPersiapan: document.getElementById("rowPersiapan"),
   rowPemilihan: document.getElementById("rowPemilihan"),
   rowPelaksanaan: document.getElementById("rowPelaksanaan"),
   rowAkhir: document.getElementById("rowAkhir"),
-
-  groupLeftLabel: document.getElementById("groupLeftLabel"),
-  groupRightLabel: document.getElementById("groupRightLabel"),
 
   detailTahun: document.getElementById("detailTahun"),
   detailJenisPengadaan: document.getElementById("detailJenisPengadaan"),
@@ -155,7 +153,22 @@ function isOverlap(rangeStart, rangeEnd, monthStart, monthEnd) {
 }
 
 function buildHeader(tahunAnggaran) {
+  el.timelineSuperHeader.innerHTML = "";
   el.timelineHeader.innerHTML = "";
+
+  const superSpacer = document.createElement("div");
+  superSpacer.className = "timeline-super-spacer";
+  el.timelineSuperHeader.appendChild(superSpacer);
+
+  const prevHeader = document.createElement("div");
+  prevHeader.className = "timeline-super-cell timeline-super-prev";
+  prevHeader.textContent = "TAHUN ANGGARAN SEBELUMNYA (N-1)";
+  el.timelineSuperHeader.appendChild(prevHeader);
+
+  const currentHeader = document.createElement("div");
+  currentHeader.className = "timeline-super-cell timeline-super-current";
+  currentHeader.textContent = "TAHUN ANGGARAN BERKENAAN (N)";
+  el.timelineSuperHeader.appendChild(currentHeader);
 
   const spacer = document.createElement("div");
   spacer.className = "timeline-spacer";
@@ -164,13 +177,9 @@ function buildHeader(tahunAnggaran) {
   TIMELINE_MONTHS.forEach((item) => {
     const div = document.createElement("div");
     div.className = "timeline-month";
-    const year = tahunAnggaran + item.yearOffset;
-    div.textContent = `${item.label} ${year}`;
+    div.textContent = item.label;
     el.timelineHeader.appendChild(div);
   });
-
-  el.groupLeftLabel.textContent = `Pra-Tahun Anggaran (${tahunAnggaran - 1})`;
-  el.groupRightLabel.textContent = `Tahun Anggaran ${tahunAnggaran}`;
 }
 
 function buildEmptyTrack(container) {
